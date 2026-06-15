@@ -10,13 +10,15 @@ export type Project = {
   created_at: string
   title: string
   description: string
-  category: 'Sofa' | 'Chairs' | 'Restorations' | 'Living Room' | 'Restaurant' | 'Before & After'
+  category: string
+  subcategory: string
   image_url: string
   alt_text: string
 }
 
 export const BUCKET = 'portfolio-uploads'
 
+// ==================== IMAGE HANDLING ====================
 export async function uploadImage(file: File): Promise<string> {
   const ext = file.name.split('.').pop()
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -37,6 +39,7 @@ export async function deleteImage(publicUrl: string): Promise<void> {
   if (error) throw error
 }
 
+// ==================== PROJECTS ====================
 export async function getProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
@@ -48,18 +51,63 @@ export async function getProjects(): Promise<Project[]> {
 
 export async function insertProject(
   project: Omit<Project, 'id' | 'created_at'>
-): Promise<Project> {
+): Promise<{ data: Project | null; error: any }> {
   const { data, error } = await supabase
     .from('projects')
     .insert(project)
     .select()
     .single()
-  if (error) throw error
-  return data as Project
+
+  if (error) {
+    console.error('[insertProject] Supabase error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    })
+  }
+
+  return { data, error }
 }
 
 export async function deleteProject(id: string, imageUrl: string): Promise<void> {
   const { error } = await supabase.from('projects').delete().eq('id', id)
   if (error) throw error
   await deleteImage(imageUrl)
+}
+
+// ==================== ARTISAN PHOTO (site_settings) ====================
+export async function getArtisanImage(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'artisan_image_url')
+    .maybeSingle();
+
+  if (error) {
+    console.error('[getArtisanImage] Supabase error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    return null;
+  }
+  console.log('[getArtisanImage] Retrieved value:', data?.value);
+  return data?.value ?? null;
+}
+
+export async function updateArtisanImage(imageUrl: string): Promise<{ error: any }> {
+  console.log('[updateArtisanImage] Attempting to save:', imageUrl);
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert(
+      { key: 'artisan_image_url', value: imageUrl, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+  if (error) {
+    console.error('[updateArtisanImage] Upsert error:', error);
+  } else {
+    console.log('[updateArtisanImage] Successfully saved');
+  }
+  return { error };
 }
