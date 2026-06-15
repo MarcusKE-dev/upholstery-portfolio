@@ -11,12 +11,7 @@ export default function Hero() {
           style={{ left: `${p}%`, borderColor: 'rgba(201,168,76,0.07)' }} />
       ))}
 
-<div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-12 pb-10 lg:pt-16 lg:pb-12">        <div className="stagger flex items-center gap-3 mb-8" style={{ animationDelay: '0.2s' }}>
-          <span className="block w-12 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.65rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>
-            Nairobi, Kenya
-          </span>
-        </div>
+<div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-12 pb-10 lg:pt-16 lg:pb-12">        
 
         <h1 className="stagger max-w-4xl" style={{ animationDelay: '0.35s' }}>
           <span className="block leading-none tracking-tight mb-2"
