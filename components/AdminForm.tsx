@@ -4,12 +4,18 @@ import imageCompression from 'browser-image-compression'
 import { uploadImage, insertProject, type Project } from '@/lib/supabase'
 import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 
-const CATS: Project['category'][] = ['Sofa','Chairs','Restorations','Living Room','Restaurant','Before & After']
+const SUB_OPTIONS: Record<string, string[]> = {
+  residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
+  window: ['Curtains', 'Blinds', 'Sheers'],
+  bedroom: ['Chester Beds', 'Scatter Cushions'],
+  automotive: ['Car Seat Covers'],
+}
 
 export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Project) => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<Project['category']>('Sofa')
+  const [category, setCategory] = useState<string>('residential')
+  const [subcategory, setSubcategory] = useState<string>('')
   const [altText, setAltText] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -31,11 +37,16 @@ export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Proj
     try {
       setErrorMsg('')
       setStatus('compressing')
-      const compressed = await imageCompression(file, { maxSizeMB: 0.8, maxWidthOrHeight: 1600, useWebWorker: true })
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1200,
+        fileType: 'image/webp',
+        useWebWorker: true,
+      })
       setStatus('uploading')
       const imageUrl = await uploadImage(compressed as File)
       setStatus('saving')
-      const project = await insertProject({ title, description, category, image_url: imageUrl, alt_text: altText || title })
+      const project = await insertProject({ title, description, category, subcategory, image_url: imageUrl, alt_text: altText || title })
       onProjectAdded(project)
       setStatus('done')
       setTimeout(() => {
@@ -61,9 +72,18 @@ export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Proj
         </div>
         <div>
           <label style={lbl}>Category</label>
-          <select value={category} onChange={e => setCategory(e.target.value as Project['category'])} className="w-full px-4 py-3 outline-none" style={inp}>
-            {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+          <select value={category} onChange={e => { setCategory(e.target.value); setSubcategory('') }} className="w-full px-4 py-3 outline-none" style={inp}>
+            <option value="residential">Bespoke Seating</option>
+            <option value="window">Window Dressings</option>
+            <option value="bedroom">Beds & Accents</option>
+            <option value="automotive">Car Seat Covers</option>
           </select>
+          {SUB_OPTIONS[category] && (
+            <select value={subcategory} onChange={e => setSubcategory(e.target.value)} className="w-full px-4 py-3 outline-none mt-2" style={inp}>
+              <option value="">Select Subcategory</option>
+              {SUB_OPTIONS[category].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+            </select>
+          )}
         </div>
         <div className="md:col-span-2">
           <label style={lbl}>Description</label>
