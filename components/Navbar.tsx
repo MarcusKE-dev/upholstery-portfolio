@@ -28,11 +28,11 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
         <a href="/" className="flex flex-col leading-none">
-          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', color: '#2C1810', fontWeight: 500 }}>
-            Charles
+          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', fontWeight: 500 }}>
+            Charles'
                   </span>
           <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase' }}>
-            Upholstery · Nairobi
+            Interiors · Nairobi
           </span>
         </a>
 
@@ -45,8 +45,8 @@ export default function Navbar() {
             </a>
           ))}
           <a href="#contact"
-            className="px-5 py-2.5 text-xs uppercase tracking-widest border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9]"
-            style={{ borderColor: '#C9A84C', color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+            className="px-5 py-2.5 text-xs uppercase tracking-widest border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+            style={{ borderColor: '#C9A84C', fontFamily: "'Jost',sans-serif" }}>
             Book Consultation
           </a>
         </nav>

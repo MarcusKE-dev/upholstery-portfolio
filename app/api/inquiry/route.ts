@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const categoryLabel = CATEGORY_LABELS[category] ?? category
 
     const { error } = await resend.emails.send({
-      from:    'Atelier Charles Inquiries <inquiries@yourdomain.com>', // ← replace with your domain
+      from:    'onboarding@resend.dev',
       to:      [process.env.CHARLES_EMAIL!],
       replyTo: email,
       subject: `New Inquiry — ${categoryLabel} from ${name}`,

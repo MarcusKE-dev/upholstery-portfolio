@@ -116,11 +116,11 @@ export default function Gallery() {
 
         {!loading && projects.length > 0 && (
           <div className="text-center mt-16">
-            <a href="#contact"
-              className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9]"
-              style={{ borderColor: '#2C1810', color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-              Discuss Your Project
-            </a>
+           <a href="#contact"
+  className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+  style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+  Discuss Your Project
+</a>
           </div>
         )}
       </div>

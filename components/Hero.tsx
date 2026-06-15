@@ -11,12 +11,12 @@ export default function Hero() {
           style={{ left: `${p}%`, borderColor: 'rgba(201,168,76,0.07)' }} />
       ))}
 
-<div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-12 pb-10 lg:pt-16 lg:pb-12">        
+<div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-20 pb-10 lg:pt-32 lg:pb-12">        
 
         <h1 className="stagger max-w-4xl" style={{ animationDelay: '0.35s' }}>
           <span className="block leading-none tracking-tight mb-2"
             style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#2C1810', fontWeight: 300 }}>
-            Bespoke Upholstery
+            Bespoke Interior
           </span>
           <span className="block leading-none tracking-tight italic"
             style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#C9A84C', fontWeight: 300 }}>
@@ -26,9 +26,9 @@ export default function Hero() {
 
         <p className="stagger mt-8 max-w-md text-base font-light leading-relaxed"
           style={{ animationDelay: '0.5s', color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
-          Expert structural restoration and luxury finishing in Nairobi.
-          High-density orthopedic foam, Italian top-grain leather,
-          and Turkish velvet — crafted to endure.
+Every commission is treated as a singular work — built by hand,
+finished to museum standard, and made to outlast its generation.
+
         </p>
 
         <div className="stagger mt-12 flex flex-wrap gap-4" style={{ animationDelay: '0.65s' }}>
@@ -37,11 +37,11 @@ export default function Hero() {
             style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
             View Our Work <ArrowDown size={13} />
           </a>
-          <a href="#contact"
-            className="inline-flex items-center px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9]"
-            style={{ borderColor: '#2C1810', color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-            Book Consultation
-          </a>
+        <a href="#contact"
+  className="inline-flex items-center px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+  style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+  Book Consultation
+</a>
         </div>
 
         <div className="stagger mt-20 grid grid-cols-3 max-w-sm gap-8" style={{ animationDelay: '0.8s' }}>
