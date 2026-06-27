@@ -51,6 +51,7 @@ app/
   layout.tsx
   page.tsx
 components/
+  AdminArtisanPhoto.tsx
   AdminForm.tsx
   AdminTable.tsx
   ArtisanSection.tsx
@@ -86,6 +87,7 @@ import { useState, useEffect } from 'react'
 import { getProjects, type Project } from '@/lib/supabase'
 import AdminForm from '@/components/AdminForm'
 import AdminTable from '@/components/AdminTable'
+import AdminArtisanPhoto from '@/components/AdminArtisanPhoto'
 import { LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -155,17 +157,24 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 lg:px-12 py-12 space-y-10">
+        {/* Stats cards - updated for new categories */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[['Total', projects.length], ['Sofa', projects.filter(p => p.category==='Sofa').length],
-            ['Chairs', projects.filter(p => p.category==='Chairs').length],
-            ['Restorations', projects.filter(p => p.category==='Restorations').length]].map(([l, v]) => (
+          {[
+            ['Total', projects.length],
+            ['Residential', projects.filter(p => p.category === 'residential').length],
+            ['Window', projects.filter(p => p.category === 'window').length],
+            ['Bedroom', projects.filter(p => p.category === 'bedroom').length],
+          ].map(([l, v]) => (
             <div key={l} className="p-5 border text-center" style={{ borderColor: 'rgba(201,168,76,0.2)', background: '#fff' }}>
               <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>{v}</div>
               <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase', marginTop: 4 }}>{l}</div>
             </div>
           ))}
         </div>
+
+        <AdminArtisanPhoto />
         <AdminForm onProjectAdded={p => setProjects(prev => [p, ...prev])} />
+
         {loading
           ? <div className="flex justify-center py-16"><Loader2 size={22} className="animate-spin" color="#C9A84C" /></div>
           : <AdminTable projects={projects} onDeleted={id => setProjects(prev => prev.filter(p => p.id !== id))} />
@@ -257,11 +266,24 @@ export default function AdminTable({ projects, onDeleted }: { projects: Project[
 
 <file path="components/ArtisanSection.tsx">
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Award, Scissors, Star } from 'lucide-react'
+import { getArtisanImage } from '@/lib/supabase'
+import Image from 'next/image'
 
 export default function ArtisanSection() {
   const ref = useRef<HTMLDivElement>(null)
+  const [artisanImage, setArtisanImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    getArtisanImage()
+      .then(url => {
+        console.log('[ArtisanSection] loaded artisan image URL:', url)
+        setArtisanImage(url)
+      })
+      .catch(console.error)
+  }, [])
+
   useEffect(() => {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => e.isIntersecting && e.target.classList.add('visible'))
@@ -271,8 +293,8 @@ export default function ArtisanSection() {
   }, [])
 
   return (
-    <section id="about" ref={ref} className="py-28 lg:py-36">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="about" ref={ref} className="py-16 lg:py-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="reveal flex items-center gap-3 mb-4">
           <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
           <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>The Artisan</span>
@@ -282,12 +304,26 @@ export default function ArtisanSection() {
           <div className="reveal order-2 lg:order-1">
             <div className="relative">
               <div className="absolute -top-4 -left-4 w-full h-full border" style={{ borderColor: 'rgba(201,168,76,0.25)' }} />
-              <div className="relative aspect-[4/5] overflow-hidden flex items-end justify-center" style={{ background: '#E8DFD0' }}>
-                <svg viewBox="0 0 200 300" className="w-40 opacity-20 mb-8" fill="#2C1810">
-                  <ellipse cx="100" cy="70" rx="40" ry="45" />
-                  <path d="M30 300 Q30 160 100 155 Q170 160 170 300 Z" />
-                </svg>
-                <p className="absolute bottom-6 text-xs tracking-widest uppercase" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>Replace with artisan photo</p>
+              <div className="relative aspect-[4/5] overflow-hidden" style={{ background: '#E8DFD0' }}>
+                {artisanImage ? (
+                  <Image
+                    src={artisanImage}
+                    alt="Charles – Master Upholsterer"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 50vw, 40vw"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <svg viewBox="0 0 200 300" className="w-32 opacity-20 mb-4" fill="#2C1810">
+                      <ellipse cx="100" cy="70" rx="40" ry="45" />
+                      <path d="M30 300 Q30 160 100 155 Q170 160 170 300 Z" />
+                    </svg>
+                    <p className="text-xs tracking-widest uppercase" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+                      Upload artisan photo in admin
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="absolute -bottom-3 -right-3 w-20 h-20 border-b border-r" style={{ borderColor: '#C9A84C' }} />
             </div>
@@ -332,28 +368,29 @@ export default function ArtisanSection() {
 
 <file path="components/Contact.tsx">
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
+import InquiryForm from './InquiryForm'
 
 export default function Contact() {
   const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '254XXXXXXXXX'
-  const waLink = `https://wa.me/${number}?text=Hi%2C%20I%20am%20interested%20in%20your%20upholstery%20services.`
+  const waLink = `https://wa.me/${number}?text=Hi%2C%20I%20am%20interested%20in%20your%20services.`
 
   return (
-    <section id="contact" className="py-28 lg:py-36" style={{ background: '#FAF5E9' }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section id="contact" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
           <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
           <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Contact</span>
         </div>
-        <div className="grid lg:grid-cols-2 gap-16">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           <div>
             <h2 className="text-4xl lg:text-5xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
               Let&apos;s Begin Your <br />
               <em className="italic" style={{ color: '#C9A84C' }}>Restoration</em>
             </h2>
-            <p className="text-base font-light leading-relaxed mb-10 max-w-md" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+            <p className="text-base font-light leading-relaxed mb-8 max-w-md" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
               Every project begins with a conversation. Tell us about your piece and we will guide you to the best solution.
             </p>
-            <div className="space-y-5 mb-10">
+            <div className="space-y-4 mb-8">
               {[
                 [MapPin, 'Nairobi, Kenya · Karen · Lavington · Westlands'],
                 [Phone, `+${number}`],
@@ -367,7 +404,7 @@ export default function Contact() {
               ))}
             </div>
             <a href={waLink} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-8 py-4 text-xs tracking-widest uppercase"
+              className="inline-flex items-center gap-3 px-8 py-4 min-h-[44px] text-xs tracking-widest uppercase"
               style={{ background: '#25D366', color: '#fff', fontFamily: "'Jost',sans-serif" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -375,245 +412,10 @@ export default function Contact() {
               WhatsApp Us
             </a>
           </div>
-          <div className="relative min-h-80 flex items-center justify-center"
-            style={{ background: '#E8DFD0', border: '1px solid rgba(201,168,76,0.2)' }}>
-            <div className="text-center">
-              <MapPin size={28} color="rgba(201,168,76,0.4)" className="mx-auto mb-3" strokeWidth={1} />
-              <p className="text-sm font-light" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>Embed Google Map here</p>
-              <p className="text-xs mt-1" style={{ color: '#B8A090', fontFamily: "'Jost',sans-serif" }}>Replace with &lt;iframe&gt; from Google Maps</p>
-            </div>
-          </div>
+          <InquiryForm />
         </div>
       </div>
     </section>
-  )
-}
-</file>
-
-<file path="components/Gallery.tsx">
-'use client'
-import { useState, useEffect } from 'react'
-import { getProjects, type Project } from '@/lib/supabase'
-import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
-
-
-export default function Gallery() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState('All')
-
-  useEffect(() => {
-    getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
-  }, [])
-
-  const filtered = filter === 'All' ? projects : projects.filter(p => p.category === filter)
-
-  return (
-    <section id="portfolio" className="py-28 lg:py-36" style={{ background: '#FAF5E9' }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Portfolio</span>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
-          <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(2rem,5vw,3rem)', color: '#2C1810', fontWeight: 300 }}>
-            Selected Works
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {CATS.map(cat => (
-              <button key={cat} onClick={() => setFilter(cat)}
-                className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
-                style={{
-                  fontFamily: "'Jost',sans-serif",
-                  background: filter === cat ? '#2C1810' : 'transparent',
-                  color: filter === cat ? '#FAF5E9' : '#2C1810',
-                  border: `1px solid ${filter === cat ? '#2C1810' : 'rgba(44,24,16,0.2)'}`,
-                }}>
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {error && <p className="text-center py-16 text-sm" style={{ color: '#8B3A3A' }}>{error}</p>}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
-            : filtered.length === 0
-            ? <p className="col-span-full text-center py-24" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#8B6F5E', fontSize: '1.25rem' }}>
-                No projects in this category yet.
-              </p>
-            : filtered.map(p => <ProjectCard key={p.id} project={p} />)
-          }
-        </div>
-
-        {!loading && projects.length > 0 && (
-          <div className="text-center mt-16">
-            <a href="#contact"
-              className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9]"
-              style={{ borderColor: '#2C1810', color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-              Discuss Your Project
-            </a>
-          </div>
-        )}
-      </div>
-    </section>
-  )
-}
-</file>
-
-<file path="components/Hero.tsx">
-'use client'
-import { ArrowDown } from 'lucide-react'
-
-export default function Hero() {
-  return (
-    <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
-      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 60% 40%, #F0E6D3 0%, #EAD9C0 40%, #FDFAF4 100%)' }} />
-
-      {[15, 35, 65, 85].map((p, i) => (
-        <div key={i} className="absolute top-0 bottom-0 border-l pointer-events-none"
-          style={{ left: `${p}%`, borderColor: 'rgba(201,168,76,0.07)' }} />
-      ))}
-
-      <div className="absolute select-none pointer-events-none"
-        style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '40vw', color: 'rgba(44,24,16,0.04)', fontWeight: 700, bottom: '-5vw', right: '-2vw', lineHeight: 1 }}>
-        A
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-32 pb-24">
-        <div className="stagger flex items-center gap-3 mb-8" style={{ animationDelay: '0.2s' }}>
-          <span className="block w-12 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.65rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>
-            Est. 2014 · Nairobi, Kenya
-          </span>
-        </div>
-
-        <h1 className="stagger max-w-4xl" style={{ animationDelay: '0.35s' }}>
-          <span className="block leading-none tracking-tight mb-2"
-            style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#2C1810', fontWeight: 300 }}>
-            Bespoke Upholstery
-          </span>
-          <span className="block leading-none tracking-tight italic"
-            style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#C9A84C', fontWeight: 300 }}>
-            for the Modern Home.
-          </span>
-        </h1>
-
-        <p className="stagger mt-8 max-w-md text-base font-light leading-relaxed"
-          style={{ animationDelay: '0.5s', color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
-          Expert structural restoration and luxury finishing in Nairobi.
-          High-density orthopedic foam, Italian top-grain leather,
-          and Turkish velvet — crafted to endure.
-        </p>
-
-        <div className="stagger mt-12 flex flex-wrap gap-4" style={{ animationDelay: '0.65s' }}>
-          <a href="#portfolio"
-            className="inline-flex items-center gap-3 px-8 py-4 text-xs tracking-widest uppercase transition-all hover:bg-[#4A2E1E]"
-            style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
-            View Our Work <ArrowDown size={13} />
-          </a>
-          <a href="#contact"
-            className="inline-flex items-center px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9]"
-            style={{ borderColor: '#2C1810', color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-            Book Consultation
-          </a>
-        </div>
-
-        <div className="stagger mt-20 grid grid-cols-3 max-w-sm gap-8" style={{ animationDelay: '0.8s' }}>
-          {[['10+', 'Years of Craft'], ['500+', 'Pieces Restored'], ['100%', 'Handcrafted']].map(([n, l]) => (
-            <div key={n}>
-              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.875rem', color: '#2C1810', fontWeight: 300 }}>{n}</div>
-              <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginTop: 2 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-        <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase' }}>Scroll</span>
-        <div className="w-px h-10" style={{ background: 'linear-gradient(to bottom, #C9A84C, transparent)' }} />
-      </div>
-    </section>
-  )
-}
-</file>
-
-<file path="components/Navbar.tsx">
-'use client'
-import { useState, useEffect } from 'react'
-import { Menu, X } from 'lucide-react'
-
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', fn)
-    return () => window.removeEventListener('scroll', fn)
-  }, [])
-
-  const links = ['#about', '#portfolio', '#services', '#testimonials', '#contact']
-  const labels = ['Artisan', 'Portfolio', 'Services', 'Testimonials', 'Contact']
-
-  return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled ? 'shadow-sm border-b' : ''
-      }`}
-      style={{
-        background: scrolled ? 'rgba(253,250,244,0.96)' : 'transparent',
-        borderColor: '#E8DFD0',
-        backdropFilter: scrolled ? 'blur(8px)' : 'none',
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
-        <a href="/" className="flex flex-col leading-none">
-          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', color: '#2C1810', fontWeight: 500 }}>
-            Charles
-                  </span>
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase' }}>
-            Upholstery · Nairobi
-          </span>
-        </a>
-
-        <nav className="hidden md:flex items-center gap-8">
-          {links.map((href, i) => (
-            <a key={href} href={href}
-              className="text-xs uppercase tracking-widest font-light hover:text-yellow-600 transition-colors"
-              style={{ fontFamily: "'Jost',sans-serif", color: '#2C1810' }}>
-              {labels[i]}
-            </a>
-          ))}
-          <a href="#contact"
-            className="px-5 py-2.5 text-xs uppercase tracking-widest border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9]"
-            style={{ borderColor: '#C9A84C', color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-            Book Consultation
-          </a>
-        </nav>
-
-        <button className="md:hidden" onClick={() => setOpen(!open)}>
-          {open ? <X size={22} color="#2C1810" /> : <Menu size={22} color="#2C1810" />}
-        </button>
-      </div>
-
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ${open ? 'max-h-80' : 'max-h-0'}`}
-        style={{ background: '#FDFAF4', borderBottom: open ? '1px solid #E8DFD0' : 'none' }}>
-        <nav className="px-6 py-6 flex flex-col gap-5">
-          {links.map((href, i) => (
-            <a key={href} href={href} onClick={() => setOpen(false)}
-              className="text-xs uppercase tracking-widest font-light"
-              style={{ fontFamily: "'Jost',sans-serif", color: '#2C1810' }}>
-              {labels[i]}
-            </a>
-          ))}
-        </nav>
-      </div>
-    </header>
   )
 }
 </file>
@@ -677,12 +479,42 @@ import { useEffect, useRef } from 'react'
 import { Layers, Zap, PenTool, Package, Truck, CheckCircle } from 'lucide-react'
 
 const services = [
-  { Icon: Layers, title: 'Full Re-upholstery', desc: 'Complete stripping and rebuilding from frame up. Structural webbing, high-density orthopedic foam, Italian leather or Turkish velvet.', kw: 'Sofa repair Nairobi · Frame rebuilding' },
-  { Icon: PenTool, title: 'Diamond Tufting', desc: 'Precision diamond tufting on sofas, headboards, and feature chairs. Executed by hand with surgical precision.', kw: 'Diamond tufting · Button work' },
-  { Icon: Zap, title: 'Structural Restoration', desc: 'Broken frames, collapsed springs, and failing structural webbing repaired to original or better-than-original standards.', kw: 'Structural webbing · Spring repair' },
-  { Icon: Package, title: 'Foam Replacement', desc: 'High-density orthopedic foam only — the kind that holds shape for 15+ years. No cheap alternatives, no cutting corners.', kw: 'Orthopedic foam · Comfort restoration' },
-  { Icon: Truck, title: 'Furniture Restoration Karen', desc: 'Serving Karen, Lavington, Muthaiga, Runda, and wider Nairobi metro. Collection and delivery available.', kw: 'Furniture restoration Karen · Delivery' },
-  { Icon: CheckCircle, title: 'Commercial & Hospitality', desc: 'Restaurant seating, hotel lobbies, office environments. Commercial-grade materials, fast turnaround, volume pricing.', kw: 'Restaurant upholstery · Hospitality' },
+  {
+    Icon: Layers,
+    title: 'Bespoke Re-Upholstery',
+    subtext: 'SOFA RETAILORING · LOOSE SLIPCOVERS',
+    desc: 'Complete stripping and premium rebuilding from the frame up. Specialized tailoring for luxury sectional sofas, antique wingbacks, and custom slipcovers.',
+  },
+  {
+    Icon: PenTool,
+    title: 'Chesterfield & Bedroom Craft',
+    subtext: 'DIAMOND TUFTING · CUSTOM HEADBOARDS',
+    desc: 'Master-tier deep diamond tufting executed by hand. Designing custom upholstered chester beds, statement headboards, and designer scatter cushions.',
+  },
+  {
+    Icon: Zap,
+    title: 'Structural & Foam Revival',
+    subtext: 'ORTHOPEDIC FOAM · FRAME REBUILDING',
+    desc: 'Restoring broken internal wood frames and collapsed structural webbing to better-than-original standards using high-density 15+ year orthopedic foam.',
+  },
+  {
+    Icon: Package,
+    title: 'Window Drapery & Couture',
+    subtext: 'ARTISANAL CURTAINS · ROLLER BLINDS',
+    desc: 'Precision-pleated luxury drapery, ethereal linen sheers, and minimalist automated roller blinds tailored perfectly to your architectural dimensions.',
+  },
+  {
+    Icon: CheckCircle,
+    title: 'Tailored Dining & Accents',
+    subtext: 'DINING SUITES · PLUSH MOCKETS',
+    desc: 'Immaculate pattern matching across luxury dining chair sets, custom accent ottomans, mockets, and bespoke tailored footstools.',
+  },
+  {
+    Icon: Truck,
+    title: 'Executive Auto & Commercial',
+    subtext: 'HOSPITALITY SEATING · CAR SEAT COVERS',
+    desc: 'Commercial-grade textiles for high-traffic restaurant and corporate spaces, combined with precision-fitted protective covers for automotive seating.',
+  },
 ]
 
 export default function ServicesSection() {
@@ -696,7 +528,7 @@ export default function ServicesSection() {
   }, [])
 
   return (
-    <section id="services" ref={ref} className="py-28 lg:py-36 relative overflow-hidden" style={{ background: '#2C1810' }}>
+    <section id="services" ref={ref} className="py-16 lg:py-20 relative overflow-hidden" style={{ background: '#2C1810' }}>
       <div className="absolute inset-0 pointer-events-none opacity-5"
         style={{ backgroundImage: 'repeating-linear-gradient(45deg,#C9A84C 0,#C9A84C 1px,transparent 0,transparent 50%)', backgroundSize: '20px 20px' }} />
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
@@ -708,13 +540,13 @@ export default function ServicesSection() {
           What We Do
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px" style={{ background: 'rgba(201,168,76,0.12)' }}>
-          {services.map(({ Icon, title, desc, kw }, i) => (
+          {services.map(({ Icon, title, subtext, desc }, i) => (
             <div key={title} className="reveal group p-8 hover:bg-[#4A2E1E] transition-colors duration-300"
               style={{ background: 'rgba(44,24,16,0.97)', transitionDelay: `${i * 0.06}s` }}>
               <Icon size={20} strokeWidth={1.5} color="#C9A84C" className="mb-5" />
               <h3 className="text-xl font-light mb-3" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#FAF5E9' }}>{title}</h3>
               <p className="text-sm font-light leading-relaxed mb-5" style={{ fontFamily: "'Jost',sans-serif", color: 'rgba(250,245,233,0.62)' }}>{desc}</p>
-              <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase' }}>{kw}</span>
+              <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase' }}>{subtext}</span>
             </div>
           ))}
         </div>
@@ -733,7 +565,7 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section id="testimonials" className="py-28 lg:py-36" style={{ background: '#FDFAF4' }}>
+    <section id="testimonials" className="py-16 lg:py-20" style={{ background: '#FDFAF4' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
           <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
@@ -781,6 +613,64 @@ export default function WhatsAppFloat() {
     </a>
   )
 }
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 283 64"><path fill="black" d="M141 16c-11 0-19 7-19 18s9 18 20 18c7 0 13-3 16-7l-7-5c-2 3-6 4-9 4-5 0-9-3-10-7h28v-3c0-11-8-18-19-18zm-9 15c1-4 4-7 9-7s8 3 9 7h-18zm117-15c-11 0-19 7-19 18s9 18 20 18c6 0 12-3 16-7l-8-5c-2 3-5 4-8 4-5 0-9-3-11-7h28l1-3c0-11-8-18-19-18zm-10 15c2-4 5-7 10-7s8 3 9 7h-19zm-39 3c0 6 4 10 10 10 4 0 7-2 9-5l8 5c-3 5-9 8-17 8-11 0-19-7-19-18s8-18 19-18c8 0 14 3 17 8l-8 5c-2-3-5-5-9-5-6 0-10 4-10 10zm83-29v46h-9V5h9zM37 0l37 64H0L37 0zm92 5-27 48L74 5h10l18 30 17-30h10zm59 12v10l-3-1c-6 0-10 4-10 10v15h-9V17h9v9c0-5 6-9 13-9z"/></svg>
+</file>
+
+<file path="postcss.config.mjs">
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 </file>
 
 <file path="app/globals.css">
@@ -862,6 +752,11 @@ body {
   100% { opacity: 1; transform: translateY(0); }
 }
 .stagger { opacity: 0; animation: fadeUp 0.7s ease forwards; }
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
 </file>
 
 <file path="app/layout.tsx">
@@ -923,6 +818,384 @@ export default function HomePage() {
 }
 </file>
 
+<file path="components/AdminArtisanPhoto.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import imageCompression from 'browser-image-compression'
+import { uploadImage, getArtisanImage, updateArtisanImage } from '@/lib/supabase'
+import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
+
+export default function AdminArtisanPhoto() {
+    const [currentImage, setCurrentImage] = useState<string | null>(null)
+    const [file, setFile] = useState<File | null>(null)
+    const [preview, setPreview] = useState<string | null>(null)
+    const [status, setStatus] = useState<'idle' | 'compressing' | 'uploading' | 'saving' | 'done' | 'error'>('idle')
+    const [errorMsg, setErrorMsg] = useState('')
+    const [loading, setLoading] = useState(true)
+
+    const loadImage = async () => {
+        setLoading(true)
+        try {
+            const url = await getArtisanImage()
+            console.log('[AdminArtisanPhoto] loaded URL:', url)
+            setCurrentImage(url)
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        loadImage()
+    }, [])
+
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0]
+        if (!f) return
+        setFile(f)
+        const reader = new FileReader()
+        reader.onload = ev => setPreview(ev.target?.result as string)
+        reader.readAsDataURL(f)
+    }
+
+   const handleUpload = async () => {
+  if (!file) { setErrorMsg('Please select an image first.'); setStatus('error'); return; }
+  try {
+    setErrorMsg('');
+    setStatus('uploading'); // skip compression step
+    const imageUrl = await uploadImage(file); // upload original file
+    setStatus('saving');
+    const { error } = await updateArtisanImage(imageUrl);
+    if (error) throw new Error(error.message);
+    await loadImage();
+    setStatus('done');
+    setFile(null);
+    setPreview(null);
+    setTimeout(() => setStatus('idle'), 2000);
+  } catch (e: unknown) {
+    console.error('Upload error:', e);
+    setErrorMsg(e instanceof Error ? e.message : 'Upload failed');
+    setStatus('error');
+  }
+};
+
+    const inpStyle: React.CSSProperties = {
+        background: '#FAF5E9',
+        border: '1px solid rgba(44,24,16,0.15)',
+        color: '#2C1810',
+        fontFamily: "'Jost',sans-serif",
+        fontSize: '0.875rem',
+    }
+    const lblStyle: React.CSSProperties = {
+        display: 'block',
+        fontSize: '0.6rem',
+        letterSpacing: '0.25em',
+        textTransform: 'uppercase',
+        color: '#8B6F5E',
+        fontFamily: "'Jost',sans-serif",
+        marginBottom: 6,
+    }
+
+    if (loading) {
+        return (
+            <div className="p-8 border" style={{ borderColor: 'rgba(201,168,76,0.25)', background: '#fff' }}>
+                <div className="flex justify-center py-8">
+                    <Loader2 size={22} className="animate-spin" color="#C9A84C" />
+                </div>
+            </div>
+        )
+    }
+
+    return (
+        <div className="p-8 border" style={{ borderColor: 'rgba(201,168,76,0.25)', background: '#fff' }}>
+            <h3 className="text-xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
+                Artisan Profile Photo
+            </h3>
+
+            {currentImage && (
+                <div className="mb-6">
+                    <label style={lblStyle}>Current Photo</label>
+                    <div className="relative w-40 h-40 overflow-hidden rounded-sm border" style={{ borderColor: 'rgba(201,168,76,0.3)' }}>
+                        <Image src={currentImage} alt="Artisan" fill className="object-cover" />
+                    </div>
+                </div>
+            )}
+
+            <div>
+                <label style={lblStyle}>Upload New Photo</label>
+                <div
+                    className="border-2 border-dashed p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+                    style={{ borderColor: 'rgba(201,168,76,0.4)' }}
+                    onClick={() => document.getElementById('artisan-file-input')?.click()}
+                >
+                    {preview ? (
+                        <img src={preview} alt="Preview" className="max-h-32 object-contain" />
+                    ) : (
+                        <>
+                            <Upload size={26} color="#C9A84C" strokeWidth={1.5} />
+                            <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+                                Click to select image
+                            </p>
+                            <p className="text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+                                JPEG, PNG, WebP · auto‑compressed to WebP ≤ 800px
+                            </p>
+                        </>
+                    )}
+                    <input
+                        id="artisan-file-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFile}
+                    />
+                </div>
+                {file && (
+                    <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+                        {file.name} ({(file.size / 1024).toFixed(0)} KB)
+                    </p>
+                )}
+            </div>
+
+            {status === 'error' && (
+                <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#8B3A3A' }}>
+                    <AlertCircle size={13} />
+                    {errorMsg}
+                </div>
+            )}
+            {status === 'done' && (
+                <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#3A7A3A' }}>
+                    <CheckCircle size={13} />
+                    Artisan photo updated successfully!
+                </div>
+            )}
+
+            <button
+                onClick={handleUpload}
+                disabled={!file || ['compressing', 'uploading', 'saving', 'done'].includes(status)}
+                className="mt-6 w-full py-3 text-xs tracking-widest uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-60"
+                style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}
+            >
+                {status === 'compressing' && <><Loader2 size={13} className="animate-spin" />Compressing…</>}
+                {status === 'uploading' && <><Loader2 size={13} className="animate-spin" />Uploading…</>}
+                {status === 'saving' && <><Loader2 size={13} className="animate-spin" />Saving…</>}
+                {status === 'done' && <><CheckCircle size={13} />Saved!</>}
+                {(status === 'idle' || status === 'error') && <>Upload Artisan Photo</>}
+            </button>
+        </div>
+    )
+}
+</file>
+
+<file path="components/Gallery.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { getProjects, type Project } from '@/lib/supabase'
+import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
+
+const CATS = [
+  { id: 'all',        label: 'All Work' },
+  { id: 'residential', label: 'Bespoke Seating' },
+  { id: 'window',      label: 'Window Dressings' },
+  { id: 'bedroom',     label: 'Beds & Accents' },
+  { id: 'automotive',  label: 'Car Seat Covers' },
+]
+
+const SUBCATEGORIES: Record<string, string[]> = {
+  residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
+  window:      ['Curtains', 'Blinds', 'Sheers'],
+  bedroom:     ['Chester Beds', 'Scatter Cushions'],
+  automotive:  ['Car Seat Covers'],
+}
+
+export default function Gallery() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState('all')
+  const [subFilter, setSubFilter] = useState('all')
+
+  useEffect(() => {
+    getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
+  }, [])
+
+  const filtered = projects.filter(p => {
+    const categoryMatch = filter === 'all' || p.category === filter
+    const subMatch = subFilter === 'all' || p.subcategory === subFilter
+    return categoryMatch && subMatch
+  })
+
+  return (
+    <section id="portfolio" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
+      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
+          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Portfolio</span>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
+          <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(2rem,5vw,3rem)', color: '#2C1810', fontWeight: 300 }}>
+            Selected Works
+          </h2>
+        </div>
+
+        {/* Primary filter tabs */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          {CATS.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => { setFilter(cat.id); setSubFilter('all') }}
+              className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
+              style={{
+                fontFamily: "'Jost',sans-serif",
+                background: filter === cat.id ? '#2C1810' : 'transparent',
+                color: filter === cat.id ? '#FAF5E9' : '#2C1810',
+                border: `1px solid ${filter === cat.id ? '#2C1810' : 'rgba(44,24,16,0.2)'}`,
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sub‑category pills (only if a specific category is active) */}
+        {filter !== 'all' && SUBCATEGORIES[filter] && (
+          <div className="flex flex-wrap gap-2 mb-10">
+            <button
+              onClick={() => setSubFilter('all')}
+              className="px-3 py-1 text-xs rounded-full transition-all"
+              style={{
+                fontFamily: "'Jost',sans-serif",
+                background: subFilter === 'all' ? '#C9A84C' : 'transparent',
+                color: subFilter === 'all' ? '#fff' : '#C9A84C',
+                border: '1px solid #C9A84C',
+              }}
+            >
+              All
+            </button>
+            {SUBCATEGORIES[filter].map(sub => (
+              <button
+                key={sub}
+                onClick={() => setSubFilter(sub)}
+                className="px-3 py-1 text-xs rounded-full transition-all"
+                style={{
+                  fontFamily: "'Jost',sans-serif",
+                  background: subFilter === sub ? '#C9A84C' : 'transparent',
+                  color: subFilter === sub ? '#fff' : '#C9A84C',
+                  border: '1px solid #C9A84C',
+                }}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {error && <p className="text-center py-16 text-sm" style={{ color: '#8B3A3A' }}>{error}</p>}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
+            : filtered.length === 0
+            ? <p className="col-span-full text-center py-24" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#8B6F5E', fontSize: '1.25rem' }}>
+                No projects in this category yet.
+              </p>
+            : filtered.map(p => <ProjectCard key={p.id} project={p} />)
+          }
+        </div>
+
+        {!loading && projects.length > 0 && (
+          <div className="text-center mt-16">
+           <a href="#contact"
+  className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+  style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+  Discuss Your Project
+</a>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+</file>
+
+<file path="components/Navbar.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { Menu, X } from 'lucide-react'
+
+export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', fn)
+    return () => window.removeEventListener('scroll', fn)
+  }, [])
+
+  const links = ['#about', '#portfolio', '#services', '#testimonials', '#contact']
+  const labels = ['Artisan', 'Portfolio', 'Services', 'Testimonials', 'Contact']
+
+  return (
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled ? 'shadow-sm border-b' : ''
+      }`}
+      style={{
+        background: scrolled ? 'rgba(253,250,244,0.96)' : 'transparent',
+        borderColor: '#E8DFD0',
+        backdropFilter: scrolled ? 'blur(8px)' : 'none',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
+        <a href="/" className="flex flex-col leading-none">
+          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', fontWeight: 500 }}>
+            Charles'
+                  </span>
+          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.3em', color: '#C9A84C', textTransform: 'uppercase' }}>
+            Interiors · Nairobi
+          </span>
+        </a>
+
+        <nav className="hidden md:flex items-center gap-8">
+          {links.map((href, i) => (
+            <a key={href} href={href}
+              className="text-xs uppercase tracking-widest font-light hover:text-yellow-600 transition-colors"
+              style={{ fontFamily: "'Jost',sans-serif", color: '#2C1810' }}>
+              {labels[i]}
+            </a>
+          ))}
+          <a href="#contact"
+            className="px-5 py-2.5 text-xs uppercase tracking-widest border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+            style={{ borderColor: '#C9A84C', fontFamily: "'Jost',sans-serif" }}>
+            Book Consultation
+          </a>
+        </nav>
+
+        <button className="md:hidden" onClick={() => setOpen(!open)}>
+          {open ? <X size={22} color="#2C1810" /> : <Menu size={22} color="#2C1810" />}
+        </button>
+      </div>
+
+      <div className={`md:hidden overflow-hidden transition-all duration-300 ${open ? 'max-h-80' : 'max-h-0'}`}
+        style={{ background: '#FDFAF4', borderBottom: open ? '1px solid #E8DFD0' : 'none' }}>
+        <nav className="px-6 py-6 flex flex-col gap-5">
+          {links.map((href, i) => (
+            <a key={href} href={href} onClick={() => setOpen(false)}
+              className="text-xs uppercase tracking-widest font-light"
+              style={{ fontFamily: "'Jost',sans-serif", color: '#2C1810' }}>
+              {labels[i]}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </header>
+  )
+}
+</file>
+
 <file path="lib/supabase.ts">
 import { createClient } from '@supabase/supabase-js'
 
@@ -936,13 +1209,15 @@ export type Project = {
   created_at: string
   title: string
   description: string
-  category: 'Sofa' | 'Chairs' | 'Restorations' | 'Living Room' | 'Restaurant' | 'Before & After'
+  category: string
+  subcategory: string
   image_url: string
   alt_text: string
 }
 
 export const BUCKET = 'portfolio-uploads'
 
+// ==================== IMAGE HANDLING ====================
 export async function uploadImage(file: File): Promise<string> {
   const ext = file.name.split('.').pop()
   const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
@@ -963,6 +1238,7 @@ export async function deleteImage(publicUrl: string): Promise<void> {
   if (error) throw error
 }
 
+// ==================== PROJECTS ====================
 export async function getProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from('projects')
@@ -974,14 +1250,23 @@ export async function getProjects(): Promise<Project[]> {
 
 export async function insertProject(
   project: Omit<Project, 'id' | 'created_at'>
-): Promise<Project> {
+): Promise<{ data: Project | null; error: any }> {
   const { data, error } = await supabase
     .from('projects')
     .insert(project)
     .select()
     .single()
-  if (error) throw error
-  return data as Project
+
+  if (error) {
+    console.error('[insertProject] Supabase error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    })
+  }
+
+  return { data, error }
 }
 
 export async function deleteProject(id: string, imageUrl: string): Promise<void> {
@@ -989,14 +1274,42 @@ export async function deleteProject(id: string, imageUrl: string): Promise<void>
   if (error) throw error
   await deleteImage(imageUrl)
 }
-</file>
 
-<file path="public/next.svg">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
-</file>
+// ==================== ARTISAN PHOTO (site_settings) ====================
+export async function getArtisanImage(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'artisan_image_url')
+    .maybeSingle();
 
-<file path="public/vercel.svg">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 283 64"><path fill="black" d="M141 16c-11 0-19 7-19 18s9 18 20 18c7 0 13-3 16-7l-7-5c-2 3-6 4-9 4-5 0-9-3-10-7h28v-3c0-11-8-18-19-18zm-9 15c1-4 4-7 9-7s8 3 9 7h-18zm117-15c-11 0-19 7-19 18s9 18 20 18c6 0 12-3 16-7l-8-5c-2 3-5 4-8 4-5 0-9-3-11-7h28l1-3c0-11-8-18-19-18zm-10 15c2-4 5-7 10-7s8 3 9 7h-19zm-39 3c0 6 4 10 10 10 4 0 7-2 9-5l8 5c-3 5-9 8-17 8-11 0-19-7-19-18s8-18 19-18c8 0 14 3 17 8l-8 5c-2-3-5-5-9-5-6 0-10 4-10 10zm83-29v46h-9V5h9zM37 0l37 64H0L37 0zm92 5-27 48L74 5h10l18 30 17-30h10zm59 12v10l-3-1c-6 0-10 4-10 10v15h-9V17h9v9c0-5 6-9 13-9z"/></svg>
+  if (error) {
+    console.error('[getArtisanImage] Supabase error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    return null;
+  }
+  console.log('[getArtisanImage] Retrieved value:', data?.value);
+  return data?.value ?? null;
+}
+
+export async function updateArtisanImage(imageUrl: string): Promise<{ error: any }> {
+  console.log('[updateArtisanImage] Attempting to save:', imageUrl);
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert(
+      { key: 'artisan_image_url', value: imageUrl, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+  if (error) {
+    console.error('[updateArtisanImage] Upsert error:', error);
+  } else {
+    console.log('[updateArtisanImage] Successfully saved');
+  }
+  return { error };
+}
 </file>
 
 <file path=".gitignore">
@@ -1094,56 +1407,6 @@ export default nextConfig;
 }
 </file>
 
-<file path="postcss.config.mjs">
-/** @type {import('postcss-load-config').Config} */
-const config = {
-  plugins: {
-    tailwindcss: {},
-  },
-};
-
-export default config;
-</file>
-
-<file path="README.md">
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-</file>
-
 <file path="tailwind.config.ts">
 import type { Config } from 'tailwindcss'
 
@@ -1215,74 +1478,6 @@ export default config
 }
 </file>
 
-<file path="app/api/inquiry/route.ts">
-import { NextApiRequest, NextApiResponse } from 'next';
-import Resend from 'resend';
-
-const categoryLabels = {
-  residential: 'Bespoke Seating',
-  window: 'Window Dressings',
-  bedroom: 'Beds & Accents',
-  automotive: 'Car Seat Covers',
-};
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { name, email, phone, category, description } = req.body;
-
-  if (!name || !email || !description) {
-    return res.status(400).json({ error: 'Name, email, and description are required' });
-  }
-
-  try {
-    const label = categoryLabels[category];
-    const htmlBody = `
-      <table>
-        <tr>
-          <th>Name</th>
-          <td>${name}</td>
-        </tr>
-        <tr>
-          <th>Email</th>
-          <td>${email}</td>
-        </tr>
-        <tr>
-          <th>Phone</th>
-          <td>${phone}</td>
-        </tr>
-        <tr>
-          <th>Category</th>
-          <td>${label}</td>
-        </tr>
-        <tr>
-          <th>Description</th>
-          <td>${description}</td>
-        </tr>
-      </table>
-    `;
-
-    await Resend.emails.send({
-      from: 'Atelier Charles Inquiries <inquiries@yourdomain.com>',
-      to: process.env.CHARLES_EMAIL,
-      replyTo: email,
-      subject: `New Inquiry — ${label} from ${name}`,
-      html: htmlBody,
-    });
-
-    return res.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Error sending email' });
-  }
-}
-</file>
-
 <file path="components/AdminForm.tsx">
 'use client'
 import { useState, useRef } from 'react'
@@ -1292,15 +1487,15 @@ import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 
 const SUB_OPTIONS: Record<string, string[]> = {
   residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
-  window: ['Curtains', 'Blinds', 'Sheers'],
-  bedroom: ['Chester Beds', 'Scatter Cushions'],
-  automotive: ['Car Seat Covers'],
+  window:      ['Curtains', 'Blinds', 'Sheers'],
+  bedroom:     ['Chester Beds', 'Scatter Cushions'],
+  automotive:  ['Car Seat Covers'],
 }
 
 export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Project) => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<string>('residential')
+  const [category, setCategory] = useState<string>('residential')  // default non-empty
   const [subcategory, setSubcategory] = useState<string>('')
   const [altText, setAltText] = useState('')
   const [file, setFile] = useState<File | null>(null)
@@ -1319,27 +1514,55 @@ export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Proj
   }
 
   const handleSubmit = async () => {
-    if (!title || !description || !file) { setErrorMsg('Fill all fields and select an image.'); setStatus('error'); return }
+    if (!title || !description || !file || !category) {
+      setErrorMsg('Fill all fields: Title, Description, Category, and select an image.')
+      setStatus('error')
+      return
+    }
     try {
       setErrorMsg('')
       setStatus('compressing')
+
       const compressed = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1200,
         fileType: 'image/webp',
         useWebWorker: true,
       })
+
       setStatus('uploading')
       const imageUrl = await uploadImage(compressed as File)
+
       setStatus('saving')
-      const project = await insertProject({ title, description, category, subcategory, image_url: imageUrl, alt_text: altText || title })
-      onProjectAdded(project)
+      const { data, error } = await insertProject({
+        title,
+        description,
+        category,
+        subcategory: subcategory || '',
+        image_url: imageUrl,
+        alt_text: altText || title,
+      })
+
+      if (error) {
+        throw new Error(`Database insert failed: ${error.message} (code: ${error.code})`)
+      }
+
+      if (data) onProjectAdded(data)
+
       setStatus('done')
       setTimeout(() => {
-        setTitle(''); setDescription(''); setAltText(''); setFile(null); setPreview(null); setCategory('Sofa'); setStatus('idle')
+        setTitle('')
+        setDescription('')
+        setAltText('')
+        setFile(null)
+        setPreview(null)
+        setCategory('residential')
+        setSubcategory('')
+        setStatus('idle')
         if (fileRef.current) fileRef.current.value = ''
       }, 2000)
     } catch (e: unknown) {
+      console.error('Upload error:', e)
       setErrorMsg(e instanceof Error ? e.message : 'An error occurred')
       setStatus('error')
     }
@@ -1361,14 +1584,17 @@ export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Proj
           <select value={category} onChange={e => { setCategory(e.target.value); setSubcategory('') }} className="w-full px-4 py-3 outline-none" style={inp}>
             <option value="residential">Bespoke Seating</option>
             <option value="window">Window Dressings</option>
-            <option value="bedroom">Beds & Accents</option>
+            <option value="bedroom">Beds &amp; Accents</option>
             <option value="automotive">Car Seat Covers</option>
           </select>
-          {SUB_OPTIONS[category] && (
-            <select value={subcategory} onChange={e => setSubcategory(e.target.value)} className="w-full px-4 py-3 outline-none mt-2" style={inp}>
-              <option value="">Select Subcategory</option>
-              {SUB_OPTIONS[category].map(sub => <option key={sub} value={sub}>{sub}</option>)}
-            </select>
+          {category && SUB_OPTIONS[category] && (
+            <div className="mt-3">
+              <label style={lbl}>Sub‑category</label>
+              <select value={subcategory} onChange={e => setSubcategory(e.target.value)} className="w-full px-4 py-3 outline-none" style={inp}>
+                <option value="">— Select sub‑category —</option>
+                {SUB_OPTIONS[category].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
           )}
         </div>
         <div className="md:col-span-2">
@@ -1414,136 +1640,344 @@ export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Proj
 }
 </file>
 
-<file path="components/InquiryForm.tsx">
-import { useState } from 'react';
-import { CheckCircle, AlertCircle } from 'react-feather';
-import Loader2 from './Loader2';
+<file path="components/Hero.tsx">
+'use client'
+import { ArrowDown } from 'lucide-react'
 
-const categories = [
-  { value: 'residential', label: 'Bespoke Seating' },
-  { value: 'window', label: 'Window Dressings' },
-  { value: 'bedroom', label: 'Beds & Accents' },
-  { value: 'automotive', label: 'Car Seat Covers' },
-];
+export default function Hero() {
+  return (
+    <section className="relative min-h-[80vh] flex flex-col justify-center overflow-hidden">
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 60% at 60% 40%, #F0E6D3 0%, #EAD9C0 40%, #FDFAF4 100%)' }} />
+
+      {[15, 35, 65, 85].map((p, i) => (
+        <div key={i} className="absolute top-0 bottom-0 border-l pointer-events-none"
+          style={{ left: `${p}%`, borderColor: 'rgba(201,168,76,0.07)' }} />
+      ))}
+
+<div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-20 pb-10 lg:pt-32 lg:pb-12">        
+
+        <h1 className="stagger max-w-4xl" style={{ animationDelay: '0.35s' }}>
+          <span className="block leading-none tracking-tight mb-2"
+            style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#2C1810', fontWeight: 300 }}>
+            Bespoke Interior
+          </span>
+          <span className="block leading-none tracking-tight italic"
+            style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#C9A84C', fontWeight: 300 }}>
+            for the Modern Home.
+          </span>
+        </h1>
+
+        <p className="stagger mt-8 max-w-md text-base font-light leading-relaxed"
+          style={{ animationDelay: '0.5s', color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+Every commission is treated as a singular work — built by hand,
+finished to museum standard, and made to outlast its generation.
+
+        </p>
+
+        <div className="stagger mt-12 flex flex-wrap gap-4" style={{ animationDelay: '0.65s' }}>
+          <a href="#portfolio"
+            className="inline-flex items-center gap-3 px-8 py-4 text-xs tracking-widest uppercase transition-all hover:bg-[#4A2E1E]"
+            style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
+            View Our Work <ArrowDown size={13} />
+          </a>
+        <a href="#contact"
+  className="inline-flex items-center px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+  style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+  Book Consultation
+</a>
+        </div>
+
+        <div className="stagger mt-20 grid grid-cols-3 max-w-sm gap-8" style={{ animationDelay: '0.8s' }}>
+          {[['10+', 'Years of Craft'], ['500+', 'Pieces Restored'], ['100%', 'Handcrafted']].map(([n, l]) => (
+            <div key={n}>
+              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.875rem', color: '#2C1810', fontWeight: 300 }}>{n}</div>
+              <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </section>
+  )
+}
+</file>
+
+<file path="components/InquiryForm.tsx">
+'use client'
+import { useState } from 'react'
+import { Send, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+
+type Status = 'idle' | 'loading' | 'success' | 'error'
+
+const SERVICES = [
+  { value: '',             label: '— Select a service —' },
+  { value: 'residential',  label: 'Bespoke Seating' },
+  { value: 'window',       label: 'Window Dressings' },
+  { value: 'bedroom',      label: 'Beds & Accents' },
+  { value: 'automotive',   label: 'Car Seat Covers' },
+]
+
+const inp: React.CSSProperties = {
+  width: '100%',
+  padding: '14px 16px',
+  background: 'rgba(253,250,244,0.6)',
+  border: '1px solid rgba(44,24,16,0.15)',
+  borderBottom: '1px solid rgba(201,168,76,0.4)',
+  color: '#2C1810',
+  fontFamily: "'Jost',sans-serif",
+  fontSize: '0.875rem',
+  fontWeight: 300,
+  outline: 'none',
+  transition: 'border-color 0.2s',
+}
+
+const lbl: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.6rem',
+  letterSpacing: '0.3em',
+  textTransform: 'uppercase',
+  color: '#8B6F5E',
+  fontFamily: "'Jost',sans-serif",
+  marginBottom: '8px',
+}
 
 export default function InquiryForm() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('idle');
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '', category: '', description: '',
+  })
+  const [status, setStatus]   = useState<Status>('idle')
+  const [errMsg, setErrMsg]   = useState('')
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setStatus('loading');
-    try {
-      const response = await fetch('/api/inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, category, description }),
-      });
-      if (response.ok) {
-        setStatus('success');
-      } else {
-        setStatus('error');
-      }
-    } catch (error) {
-      setStatus('error');
+  const set = (field: string) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm(prev => ({ ...prev, [field]: e.target.value }))
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.email || !form.description) {
+      setErrMsg('Please fill in Name, Email, and Project Description.')
+      setStatus('error')
+      return
     }
-  };
+
+    setStatus('loading')
+    setErrMsg('')
+
+    try {
+      const res = await fetch('/api/inquiry', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(form),
+      })
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error || 'Submission failed.')
+
+      setStatus('success')
+      setForm({ name: '', email: '', phone: '', category: '', description: '' })
+    } catch (e: unknown) {
+      setErrMsg(e instanceof Error ? e.message : 'Something went wrong.')
+      setStatus('error')
+    }
+  }
+
+  if (status === 'success') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center"
+        style={{ border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.03)' }}>
+        <CheckCircle size={32} color="#C9A84C" strokeWidth={1} className="mb-5" />
+        <h3 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.75rem', color: '#2C1810', fontWeight: 300 }}>
+          Inquiry Received
+        </h3>
+        <p className="mt-3 text-sm font-light max-w-xs"
+          style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif", lineHeight: 1.8 }}>
+          Thank you for reaching out. Charles will review your project and be in touch within 24 hours.
+        </p>
+        <button onClick={() => setStatus('idle')} className="mt-8 text-xs tracking-widest uppercase"
+          style={{ color: '#C9A84C', fontFamily: "'Jost',sans-serif", textDecoration: 'underline', textUnderlineOffset: '4px' }}>
+          Send another inquiry
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className="bg-[#2C1810] py-12">
-      <h2 className="text-3xl font-CormorantGaramond text-[#C9A84C] mb-4">Inquiry Form</h2>
-      <form onSubmit={handleSubmit} className="max-w-lg mx-auto">
-        <div className="mb-4">
-          <label className="block text-sm font-Jost text-[#FAF5E9] mb-2" htmlFor="name">
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="w-full p-2 bg-[#FAF5E9] border border-[#2C1810] rounded"
-          />
+    <div style={{ border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(253,250,244,0.5)' }}>
+      <div className="px-8 pt-8 pb-6" style={{ borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+        <div className="flex items-center gap-3 mb-3">
+          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
+          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>
+            Start a Project
+          </span>
         </div>
-        <div className="mb-4">
-          <label className="block text-sm font-Jost text-[#FAF5E9] mb-2" htmlFor="email">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="w-full p-2 bg-[#FAF5E9] border border-[#2C1810] rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-Jost text-[#FAF5E9] mb-2" htmlFor="phone">
-            Phone
-          </label>
-          <input
-            type="text"
-            id="phone"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            className="w-full p-2 bg-[#FAF5E9] border border-[#2C1810] rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-Jost text-[#FAF5E9] mb-2" htmlFor="category">
-            Category
-          </label>
-          <select
-            id="category"
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            className="w-full p-2 bg-[#FAF5E9] border border-[#2C1810] rounded"
-          >
-            <option value="">Select Category</option>
-            {categories.map((category) => (
-              <option key={category.value} value={category.value}>
-                {category.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-Jost text-[#FAF5E9] mb-2" htmlFor="description">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            className="w-full p-2 bg-[#FAF5E9] border border-[#2C1810] rounded"
-          />
-        </div>
-        <button
-          type="submit"
-          className="px-4 py-2 text-sm font-Jost text-[#FAF5E9] bg-[#C9A84C] rounded"
-          disabled={status === 'loading'}
-        >
-          {status === 'loading' ? <Loader2 /> : 'Submit'}
-        </button>
-        {status === 'success' && (
-          <div className="mt-4 text-sm font-Jost text-[#FAF5E9]">
-            <CheckCircle size={20} className="mr-2" />
-            Inquiry sent successfully!
+        <h3 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.75rem', color: '#2C1810', fontWeight: 300 }}>
+          Tell Us About Your Vision
+        </h3>
+        <p className="mt-2 text-sm font-light" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif", lineHeight: 1.8 }}>
+          Every commission begins with a conversation. Share your ideas and Charles will respond personally.
+        </p>
+      </div>
+
+      <div className="p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label style={lbl}>Full Name <span style={{ color: '#C9A84C' }}>*</span></label>
+            <input type="text" value={form.name} onChange={set('name')}
+              placeholder="Your full name" style={inp}
+              onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
+              onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
           </div>
-        )}
+          <div>
+            <label style={lbl}>Email Address <span style={{ color: '#C9A84C' }}>*</span></label>
+            <input type="email" value={form.email} onChange={set('email')}
+              placeholder="your@email.com" style={inp}
+              onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
+              onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
+          </div>
+          <div>
+            <label style={lbl}>Phone Number</label>
+            <input type="tel" value={form.phone} onChange={set('phone')}
+              placeholder="+254 7XX XXX XXX" style={inp}
+              onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
+              onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
+          </div>
+          <div>
+            <label style={lbl}>Service Category</label>
+            <select value={form.category} onChange={set('category')} style={inp}>
+              {SERVICES.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label style={lbl}>Project Description <span style={{ color: '#C9A84C' }}>*</span></label>
+            <textarea value={form.description} onChange={set('description')} rows={5}
+              placeholder="Describe your piece — its current condition, the look you have in mind, fabrics or finishes you are drawn to…"
+              style={{ ...inp, resize: 'none', lineHeight: 1.8 }}
+              onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
+              onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
+          </div>
+        </div>
+
         {status === 'error' && (
-          <div className="mt-4 text-sm font-Jost text-[#FAF5E9]">
-            <AlertCircle size={20} className="mr-2" />
-            Error sending inquiry. Please try again.
+          <div className="mt-5 flex items-center gap-2 text-sm"
+            style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>
+            <AlertCircle size={14} strokeWidth={1.5} />
+            {errMsg}
           </div>
         )}
-      </form>
+
+        <div className="my-8" style={{ height: '1px', background: 'linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent)' }} />
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-xs font-light" style={{ color: '#B8A090', fontFamily: "'Jost',sans-serif" }}>
+            Fields marked <span style={{ color: '#C9A84C' }}>*</span> are required.
+            Your details are never shared.
+          </p>
+          <button onClick={handleSubmit} disabled={status === 'loading'}
+            className="inline-flex items-center gap-3 px-8 py-4 text-xs tracking-widest uppercase transition-all duration-200 disabled:opacity-60 hover:bg-[#4A2E1E] flex-shrink-0"
+            style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
+            {status === 'loading'
+              ? <><Loader2 size={13} className="animate-spin" />Sending…</>
+              : <><Send size={13} strokeWidth={1.5} />Send Inquiry</>
+            }
+          </button>
+        </div>
+      </div>
     </div>
-  );
+  )
+}
+</file>
+
+<file path="app/api/inquiry/route.ts">
+import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+const CATEGORY_LABELS: Record<string, string> = {
+  residential: 'Bespoke Seating',
+  window:      'Window Dressings',
+  bedroom:     'Beds & Accents',
+  automotive:  'Car Seat Covers',
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { name, email, phone, category, description } = body
+
+    if (!name || !email || !description) {
+      return NextResponse.json(
+        { error: 'Name, email, and description are required.' },
+        { status: 400 }
+      )
+    }
+
+    const categoryLabel = CATEGORY_LABELS[category] ?? category
+
+    const { error } = await resend.emails.send({
+      from:    'onboarding@resend.dev',
+      to:      [process.env.CHARLES_EMAIL!],
+      replyTo: email,
+      subject: `New Inquiry — ${categoryLabel} from ${name}`,
+      html: `
+        <div style="font-family:'Georgia',serif;max-width:600px;margin:0 auto;color:#2C1810;">
+          <div style="background:#2C1810;padding:32px 40px;">
+            <h1 style="color:#C9A84C;font-size:1.5rem;font-weight:300;margin:0;letter-spacing:0.05em;">
+              Atelier Charles
+            </h1>
+            <p style="color:rgba(250,245,233,0.6);font-size:0.75rem;letter-spacing:0.25em;text-transform:uppercase;margin:6px 0 0;">
+              New Client Inquiry
+            </p>
+          </div>
+
+          <div style="background:#FAF5E9;padding:40px;">
+            <table style="width:100%;border-collapse:collapse;">
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#8B6F5E;width:140px;">Name</td>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.9rem;">${name}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#8B6F5E;">Email</td>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.9rem;">
+                  <a href="mailto:${email}" style="color:#C9A84C;">${email}</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#8B6F5E;">Phone</td>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.9rem;">${phone || '—'}</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#8B6F5E;">Service</td>
+                <td style="padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.2);font-size:0.9rem;">${categoryLabel}</td>
+              </tr>
+            </table>
+
+            <div style="margin-top:28px;">
+              <p style="font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#8B6F5E;margin-bottom:10px;">Project Description</p>
+              <p style="font-size:0.95rem;line-height:1.8;white-space:pre-wrap;">${description}</p>
+            </div>
+          </div>
+
+          <div style="background:#2C1810;padding:20px 40px;text-align:center;">
+            <p style="color:rgba(250,245,233,0.35);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;margin:0;">
+              Atelier Charles · Nairobi, Kenya
+            </p>
+          </div>
+        </div>
+      `,
+    })
+
+    if (error) {
+      console.error('Resend error:', error)
+      return NextResponse.json({ error: 'Failed to send email.' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error('Inquiry API error:', err)
+    return NextResponse.json({ error: 'Server error.' }, { status: 500 })
+  }
 }
 </file>
 
