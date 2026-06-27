@@ -3,157 +3,291 @@ import { useState, useRef } from 'react'
 import imageCompression from 'browser-image-compression'
 import { uploadImage, insertProject, type Project } from '@/lib/supabase'
 import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
-
-const SUB_OPTIONS: Record<string, string[]> = {
-  residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
-  window:      ['Curtains', 'Blinds', 'Sheers'],
-  bedroom:     ['Chester Beds', 'Scatter Cushions'],
-  automotive:  ['Car Seat Covers'],
-}
+import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
 
 export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Project) => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<string>('residential')  // default non-empty
-  const [subcategory, setSubcategory] = useState<string>('')
+  const [category, setCategory] = useState<CategoryId>('residential')
+  const [subcategory, setSubcategory] = useState('')
   const [altText, setAltText] = useState('')
-  const [file, setFile] = useState<File | null>(null)
+  const [file, setFile] = useState<File | null>(null)          // main/after image
+  const [beforeFile, setBeforeFile] = useState<File | null>(null) // before image (optional)
   const [preview, setPreview] = useState<string | null>(null)
+  const [beforePreview, setBeforePreview] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle'|'compressing'|'uploading'|'saving'|'done'|'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const beforeFileRef = useRef<HTMLInputElement>(null)
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>, isBefore: boolean) => {
     const f = e.target.files?.[0]
     if (!f) return
-    setFile(f)
-    const reader = new FileReader()
-    reader.onload = ev => setPreview(ev.target?.result as string)
-    reader.readAsDataURL(f)
+    if (isBefore) {
+      setBeforeFile(f)
+      const reader = new FileReader()
+      reader.onload = ev => setBeforePreview(ev.target?.result as string)
+      reader.readAsDataURL(f)
+    } else {
+      setFile(f)
+      const reader = new FileReader()
+      reader.onload = ev => setPreview(ev.target?.result as string)
+      reader.readAsDataURL(f)
+    }
   }
 
   const handleSubmit = async () => {
-    if (!title || !description || !file || !category) {
-      setErrorMsg('Fill all fields: Title, Description, Category, and select an image.')
+    // Only require the main image
+    if (!file) {
+      setErrorMsg('Please select a main image.')
       setStatus('error')
       return
     }
+
     try {
       setErrorMsg('')
       setStatus('compressing')
 
-      const compressed = await imageCompression(file, {
+      // Compress main image
+      const compressedMain = await imageCompression(file, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1200,
         fileType: 'image/webp',
         useWebWorker: true,
       })
 
-      setStatus('uploading')
-      const imageUrl = await uploadImage(compressed as File)
-
-      setStatus('saving')
-      const { data, error } = await insertProject({
-        title,
-        description,
-        category,
-        subcategory: subcategory || '',
-        image_url: imageUrl,
-        alt_text: altText || title,
-      })
-
-      if (error) {
-        throw new Error(`Database insert failed: ${error.message} (code: ${error.code})`)
+      // Compress before image if provided
+      let beforeImageUrl: string | null = null
+      if (beforeFile) {
+        const compressedBefore = await imageCompression(beforeFile, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1200,
+          fileType: 'image/webp',
+          useWebWorker: true,
+        })
+        setStatus('uploading')
+        beforeImageUrl = await uploadImage(compressedBefore as File)
       }
 
-      if (data) onProjectAdded(data)
+      setStatus('uploading')
+      const mainImageUrl = await uploadImage(compressedMain as File)
 
-      setStatus('done')
-      setTimeout(() => {
+      setStatus('saving')
+      // Build project object with defaults for missing fields
+      const finalTitle = title.trim() || 'Untitled'
+      const finalDescription = description.trim() || ''
+      const finalCategory = category || 'residential'
+      const finalSubcategory = subcategory || ''
+      const finalAlt = altText.trim() || finalTitle
+
+      const projectData = {
+        title: finalTitle,
+        description: finalDescription,
+        category: finalCategory,
+        subcategory: finalSubcategory,
+        image_url: mainImageUrl,
+        before_image_url: beforeImageUrl,
+        alt_text: finalAlt,
+      }
+
+      const { data, error } = await insertProject(projectData)
+
+      if (error) throw new Error(`Database insert failed: ${error.message} (code: ${error.code})`)
+
+      if (data) {
+        onProjectAdded(data)
+        // Reset form
         setTitle('')
         setDescription('')
-        setAltText('')
-        setFile(null)
-        setPreview(null)
         setCategory('residential')
         setSubcategory('')
-        setStatus('idle')
-        if (fileRef.current) fileRef.current.value = ''
-      }, 2000)
+        setAltText('')
+        setFile(null)
+        setBeforeFile(null)
+        setPreview(null)
+        setBeforePreview(null)
+        setStatus('done')
+        setTimeout(() => setStatus('idle'), 2000)
+      }
     } catch (e: unknown) {
-      console.error('Upload error:', e)
-      setErrorMsg(e instanceof Error ? e.message : 'An error occurred')
+      console.error(e)
+      setErrorMsg(e instanceof Error ? e.message : 'Upload failed')
       setStatus('error')
     }
   }
 
-  const inp = { background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', color: '#2C1810', fontFamily: "'Jost',sans-serif", fontSize: '0.875rem' }
-  const lbl = { display: 'block' as const, fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#8B6F5E', fontFamily: "'Jost',sans-serif", marginBottom: 6 }
-
   return (
-    <div className="p-8 border" style={{ borderColor: 'rgba(201,168,76,0.25)', background: '#fff' }}>
-      <h2 className="text-2xl font-light mb-8" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>Upload New Project</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="border p-6" style={{ borderColor: 'rgba(201,168,76,0.25)', background: '#fff' }}>
+      <h3 className="text-xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
+        Add New Project
+      </h3>
+
+      <div className="space-y-4">
+        {/* Title - optional */}
         <div>
-          <label style={lbl}>Title</label>
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Victorian Chesterfield Restoration" className="w-full px-4 py-3 outline-none" style={inp} />
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Title (optional)</label>
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+            placeholder="e.g. Classic Chesterfield Sofa"
+          />
         </div>
+
+        {/* Description - optional */}
         <div>
-          <label style={lbl}>Category</label>
-          <select value={category} onChange={e => { setCategory(e.target.value); setSubcategory('') }} className="w-full px-4 py-3 outline-none" style={inp}>
-            <option value="residential">Bespoke Seating</option>
-            <option value="window">Window Dressings</option>
-            <option value="bedroom">Beds &amp; Accents</option>
-            <option value="automotive">Car Seat Covers</option>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Description (optional)</label>
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={3}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+            placeholder="Brief description of the project..."
+          />
+        </div>
+
+        {/* Category - optional, default residential */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Category (optional)</label>
+          <select
+            value={category}
+            onChange={e => { setCategory(e.target.value as CategoryId); setSubcategory('') }}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+          >
+            {CATEGORIES.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.label}</option>
+            ))}
           </select>
-          {category && SUB_OPTIONS[category] && (
-            <div className="mt-3">
-              <label style={lbl}>Sub‑category</label>
-              <select value={subcategory} onChange={e => setSubcategory(e.target.value)} className="w-full px-4 py-3 outline-none" style={inp}>
-                <option value="">— Select sub‑category —</option>
-                {SUB_OPTIONS[category].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
+        </div>
+
+        {/* Subcategory - optional */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Subcategory (optional)</label>
+          <select
+            value={subcategory}
+            onChange={e => setSubcategory(e.target.value)}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+          >
+            <option value="">None</option>
+            {SUBCATEGORIES[category as CategoryId]?.map(sub => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Alt Text - optional */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Alt Text (optional)</label>
+          <input
+            type="text"
+            value={altText}
+            onChange={e => setAltText(e.target.value)}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+            placeholder="SEO-friendly description"
+          />
+        </div>
+
+        {/* Main Image Upload */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Main Image (required)</label>
+          <div
+            className="border-2 border-dashed p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+            style={{ borderColor: 'rgba(201,168,76,0.4)' }}
+            onClick={() => fileRef.current?.click()}
+          >
+            {preview ? (
+              <img src={preview} alt="Main preview" className="max-h-32 object-contain" />
+            ) : (
+              <>
+                <Upload size={26} color="#C9A84C" strokeWidth={1.5} />
+                <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+                  Click to select main image
+                </p>
+                <p className="text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+                  JPEG, PNG, WebP · auto‑compressed to WebP ≤ 1200px
+                </p>
+              </>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => handleFile(e, false)}
+            />
+          </div>
+          {file && (
+            <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+              {file.name} ({(file.size / 1024).toFixed(0)} KB)
+            </p>
           )}
         </div>
-        <div className="md:col-span-2">
-          <label style={lbl}>Description</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe the work done, materials used…" rows={3} className="w-full px-4 py-3 outline-none resize-none" style={inp} />
-        </div>
-        <div className="md:col-span-2">
-          <label style={lbl}>Alt Text (SEO)</label>
-          <input type="text" value={altText} onChange={e => setAltText(e.target.value)} placeholder="e.g. Restored leather sofa Karen Nairobi" className="w-full px-4 py-3 outline-none" style={inp} />
-        </div>
-        <div className="md:col-span-2">
-          <label style={lbl}>Project Image</label>
-          <div className="border-2 border-dashed p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
-            style={{ borderColor: 'rgba(201,168,76,0.4)' }} onClick={() => fileRef.current?.click()}>
-            {preview
-              ? <img src={preview} alt="Preview" className="max-h-48 object-contain" />
-              : <>
-                  <Upload size={26} color="#C9A84C" strokeWidth={1.5} />
-                  <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>Click to select image</p>
-                  <p className="text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>JPEG, PNG, WebP · auto-compressed</p>
-                </>
-            }
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+
+        {/* Before Image Upload (optional) */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Before Image (optional)</label>
+          <div
+            className="border-2 border-dashed p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+            style={{ borderColor: 'rgba(201,168,76,0.3)' }}
+            onClick={() => beforeFileRef.current?.click()}
+          >
+            {beforePreview ? (
+              <img src={beforePreview} alt="Before preview" className="max-h-32 object-contain" />
+            ) : (
+              <>
+                <Upload size={22} color="#C9A84C" strokeWidth={1.5} />
+                <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+                  Click to select before photo (optional)
+                </p>
+              </>
+            )}
+            <input
+              ref={beforeFileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => handleFile(e, true)}
+            />
           </div>
-          {file && <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>}
+          {beforeFile && (
+            <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+              {beforeFile.name} ({(beforeFile.size / 1024).toFixed(0)} KB)
+            </p>
+          )}
         </div>
+
+        {status === 'error' && (
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#8B3A3A' }}>
+            <AlertCircle size={13} />
+            {errorMsg}
+          </div>
+        )}
+        {status === 'done' && (
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#3A7A3A' }}>
+            <CheckCircle size={13} />
+            Project added successfully!
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={['compressing', 'uploading', 'saving', 'done'].includes(status)}
+          className="w-full py-3 text-xs tracking-widest uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-60"
+          style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}
+        >
+          {status === 'compressing' && <><Loader2 size={13} className="animate-spin" />Compressing…</>}
+          {status === 'uploading' && <><Loader2 size={13} className="animate-spin" />Uploading…</>}
+          {status === 'saving' && <><Loader2 size={13} className="animate-spin" />Saving…</>}
+          {status === 'done' && <><CheckCircle size={13} />Saved!</>}
+          {(status === 'idle' || status === 'error') && <>Add Project</>}
+        </button>
       </div>
-
-      {status === 'error' && <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#8B3A3A' }}><AlertCircle size={13} />{errorMsg}</div>}
-      {status === 'done' && <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#3A7A3A' }}><CheckCircle size={13} />Project uploaded successfully!</div>}
-
-      <button onClick={handleSubmit} disabled={['compressing','uploading','saving','done'].includes(status)}
-        className="mt-8 w-full py-4 text-xs tracking-widest uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-60"
-        style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
-        {status === 'compressing' && <><Loader2 size={13} className="animate-spin" />Compressing…</>}
-        {status === 'uploading' && <><Loader2 size={13} className="animate-spin" />Uploading…</>}
-        {status === 'saving' && <><Loader2 size={13} className="animate-spin" />Saving…</>}
-        {status === 'done' && <><CheckCircle size={13} />Saved!</>}
-        {(status === 'idle' || status === 'error') && <>Upload Project</>}
-      </button>
     </div>
   )
 }
