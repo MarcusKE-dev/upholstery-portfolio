@@ -16,11 +16,8 @@ export default function Gallery() {
     getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
   }, [])
 
-  // Filter out incomplete projects (untitled or no description) from public view
+  // Show ALL projects – no completeness filter.
   const filtered = projects.filter(p => {
-    // Only show projects that have a meaningful title and description
-    const isComplete = p.title && p.title !== 'Untitled' && p.description && p.description.length > 0
-    if (!isComplete) return false
     const categoryMatch = filter === 'all' || p.category === filter
     const subMatch = subFilter === 'all' || p.subcategory === subFilter
     return categoryMatch && subMatch
