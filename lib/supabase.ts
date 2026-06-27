@@ -12,7 +12,8 @@ export type Project = {
   description: string
   category: string
   subcategory: string
-  image_url: string
+  image_url: string       // main/after image
+  before_image_url?: string | null // optional before photo
   alt_text: string
 }
 
@@ -70,10 +71,24 @@ export async function insertProject(
   return { data, error }
 }
 
-export async function deleteProject(id: string, imageUrl: string): Promise<void> {
+export async function updateProject(
+  id: string,
+  updates: Partial<Omit<Project, 'id' | 'created_at'>>
+): Promise<{ data: Project | null; error: any }> {
+  const { data, error } = await supabase
+    .from('projects')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function deleteProject(id: string, imageUrl: string, beforeImageUrl?: string | null): Promise<void> {
   const { error } = await supabase.from('projects').delete().eq('id', id)
   if (error) throw error
   await deleteImage(imageUrl)
+  if (beforeImageUrl) await deleteImage(beforeImageUrl)
 }
 
 // ==================== ARTISAN PHOTO (site_settings) ====================
@@ -85,29 +100,18 @@ export async function getArtisanImage(): Promise<string | null> {
     .maybeSingle();
 
   if (error) {
-    console.error('[getArtisanImage] Supabase error:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-    });
+    console.error('[getArtisanImage] Supabase error:', error);
     return null;
   }
-  console.log('[getArtisanImage] Retrieved value:', data?.value);
   return data?.value ?? null;
 }
 
 export async function updateArtisanImage(imageUrl: string): Promise<{ error: any }> {
-  console.log('[updateArtisanImage] Attempting to save:', imageUrl);
   const { error } = await supabase
     .from('site_settings')
     .upsert(
       { key: 'artisan_image_url', value: imageUrl, updated_at: new Date().toISOString() },
       { onConflict: 'key' }
     );
-  if (error) {
-    console.error('[updateArtisanImage] Upsert error:', error);
-  } else {
-    console.log('[updateArtisanImage] Successfully saved');
-  }
   return { error };
 }
