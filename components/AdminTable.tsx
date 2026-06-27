@@ -1,10 +1,14 @@
 'use client'
 import { useState } from 'react'
 import Image from 'next/image'
-import { Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2, Pencil } from 'lucide-react'
 import { deleteProject, type Project } from '@/lib/supabase'
 
-export default function AdminTable({ projects, onDeleted }: { projects: Project[], onDeleted: (id: string) => void }) {
+export default function AdminTable({ projects, onDeleted, onEdit }: { 
+  projects: Project[], 
+  onDeleted: (id: string) => void,
+  onEdit: (p: Project) => void
+}) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -13,7 +17,7 @@ export default function AdminTable({ projects, onDeleted }: { projects: Project[
     if (confirmId !== p.id) { setConfirmId(p.id); return }
     try {
       setDeletingId(p.id); setError(null)
-      await deleteProject(p.id, p.image_url)
+      await deleteProject(p.id, p.image_url, p.before_image_url)
       onDeleted(p.id)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Delete failed')
@@ -54,11 +58,18 @@ export default function AdminTable({ projects, onDeleted }: { projects: Project[
                 </td>
                 <td className="px-5 py-4">
                   <span className="text-xs px-2 py-1" style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C', fontFamily: "'Jost',sans-serif" }}>{p.category}</span>
+                  {p.subcategory && <span className="text-xs ml-1 px-2 py-1" style={{ background: 'rgba(44,24,16,0.05)', color: '#8B6F5E' }}>{p.subcategory}</span>}
                 </td>
                 <td className="px-5 py-4 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
                   {new Date(p.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 flex gap-2">
+                  <button
+                    onClick={() => onEdit(p)}
+                    className="p-2 border border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C] hover:text-white transition"
+                  >
+                    <Pencil size={14} />
+                  </button>
                   <button onClick={() => handleDelete(p)} disabled={deletingId === p.id}
                     className="flex items-center gap-1.5 px-3 py-2 text-xs uppercase tracking-widest transition-all"
                     style={{ border: `1px solid ${confirmId === p.id ? '#8B3A3A' : 'rgba(139,58,58,0.3)'}`, color: '#8B3A3A', background: confirmId === p.id ? 'rgba(139,58,58,0.08)' : 'transparent', fontFamily: "'Jost',sans-serif" }}>
