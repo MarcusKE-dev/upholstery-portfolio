@@ -4,6 +4,7 @@ import { getProjects, type Project } from '@/lib/supabase'
 import AdminForm from '@/components/AdminForm'
 import AdminTable from '@/components/AdminTable'
 import AdminArtisanPhoto from '@/components/AdminArtisanPhoto'
+import AdminEditModal from '@/components/AdminEditModal'
 import { LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -12,6 +13,7 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
 
   useEffect(() => {
     if (sessionStorage.getItem('atelier_admin') === 'true') setAuthed(true)
@@ -73,7 +75,7 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-6 lg:px-12 py-12 space-y-10">
-        {/* Stats cards - updated for new categories */}
+        {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             ['Total', projects.length],
@@ -93,9 +95,20 @@ export default function AdminPage() {
 
         {loading
           ? <div className="flex justify-center py-16"><Loader2 size={22} className="animate-spin" color="#C9A84C" /></div>
-          : <AdminTable projects={projects} onDeleted={id => setProjects(prev => prev.filter(p => p.id !== id))} />
+          : <AdminTable projects={projects} onDeleted={id => setProjects(prev => prev.filter(p => p.id !== id))} onEdit={setEditingProject} />
         }
       </main>
+
+      {editingProject && (
+        <AdminEditModal
+          project={editingProject}
+          onUpdate={(updated) => {
+            setProjects(prev => prev.map(p => p.id === updated.id ? updated : p))
+            setEditingProject(null)
+          }}
+          onClose={() => setEditingProject(null)}
+        />
+      )}
     </div>
   )
 }
