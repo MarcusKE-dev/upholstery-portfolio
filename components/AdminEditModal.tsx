@@ -16,7 +16,7 @@ export default function AdminEditModal({
 }) {
   const [title, setTitle] = useState(project.title)
   const [description, setDescription] = useState(project.description)
-  const [category, setCategory] = useState<CategoryId>(project.category as CategoryId)
+  const [category, setCategory] = useState<CategoryId>(project.category as CategoryId || 'residential')
   const [subcategory, setSubcategory] = useState(project.subcategory || '')
   const [altText, setAltText] = useState(project.alt_text || '')
   const [newMainFile, setNewMainFile] = useState<File | null>(null)
@@ -45,10 +45,13 @@ export default function AdminEditModal({
   }
 
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim() || !category) {
-      setError('Title, Description, and Category are required.')
-      return
-    }
+    // No required fields – everything is optional.
+    // Set defaults for empty values.
+    const finalTitle = title.trim() || 'Untitled'
+    const finalDescription = description.trim() || ''
+    const finalCategory = category || 'residential'
+    const finalSubcategory = subcategory.trim() || ''
+    const finalAlt = altText.trim() || finalTitle
 
     setLoading(true)
     setError('')
@@ -57,7 +60,6 @@ export default function AdminEditModal({
       let newMainUrl = project.image_url
       let newBeforeUrl = project.before_image_url
 
-      // If a new main image is provided, upload it
       if (newMainFile) {
         const compressed = await imageCompression(newMainFile, {
           maxSizeMB: 1,
@@ -68,7 +70,6 @@ export default function AdminEditModal({
         newMainUrl = await uploadImage(compressed as File)
       }
 
-      // If a new before image is provided, upload it
       if (newBeforeFile) {
         const compressed = await imageCompression(newBeforeFile, {
           maxSizeMB: 1,
@@ -80,11 +81,11 @@ export default function AdminEditModal({
       }
 
       const updates = {
-        title: title.trim(),
-        description: description.trim(),
-        category,
-        subcategory: subcategory.trim() || '',
-        alt_text: altText.trim() || title.trim(),
+        title: finalTitle,
+        description: finalDescription,
+        category: finalCategory,
+        subcategory: finalSubcategory,
+        alt_text: finalAlt,
         image_url: newMainUrl,
         before_image_url: newBeforeUrl,
       }
@@ -112,31 +113,33 @@ export default function AdminEditModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Title *</label>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Title (optional)</label>
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
               className="w-full px-4 py-3 outline-none"
               style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+              placeholder="Leave blank to keep 'Untitled'"
             />
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Description *</label>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Description (optional)</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={3}
               className="w-full px-4 py-3 outline-none"
               style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+              placeholder="Add a description later"
             />
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Category *</label>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Category (optional)</label>
             <select
               value={category}
-              onChange={e => { setCategory(e.target.value as CategoryId); setSubcategory('') }}
+              onChange={e => setCategory(e.target.value as CategoryId)}
               className="w-full px-4 py-3 outline-none"
               style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
             >
@@ -147,7 +150,7 @@ export default function AdminEditModal({
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Subcategory</label>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Subcategory (optional)</label>
             <select
               value={subcategory}
               onChange={e => setSubcategory(e.target.value)}
@@ -162,7 +165,7 @@ export default function AdminEditModal({
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Alt Text</label>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Alt Text (optional)</label>
             <input
               value={altText}
               onChange={e => setAltText(e.target.value)}
