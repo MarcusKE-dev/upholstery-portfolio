@@ -2,21 +2,8 @@
 import { useState, useEffect } from 'react'
 import { getProjects, type Project } from '@/lib/supabase'
 import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
-
-const CATS = [
-  { id: 'all',        label: 'All Work' },
-  { id: 'residential', label: 'Bespoke Seating' },
-  { id: 'window',      label: 'Window Dressings' },
-  { id: 'bedroom',     label: 'Beds & Accents' },
-  { id: 'automotive',  label: 'Car Seat Covers' },
-]
-
-const SUBCATEGORIES: Record<string, string[]> = {
-  residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
-  window:      ['Curtains', 'Blinds', 'Sheers'],
-  bedroom:     ['Chester Beds', 'Scatter Cushions'],
-  automotive:  ['Car Seat Covers'],
-}
+import Link from 'next/link'
+import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -29,7 +16,11 @@ export default function Gallery() {
     getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
   }, [])
 
+  // Filter out incomplete projects (untitled or no description) from public view
   const filtered = projects.filter(p => {
+    // Only show projects that have a meaningful title and description
+    const isComplete = p.title && p.title !== 'Untitled' && p.description && p.description.length > 0
+    if (!isComplete) return false
     const categoryMatch = filter === 'all' || p.category === filter
     const subMatch = subFilter === 'all' || p.subcategory === subFilter
     return categoryMatch && subMatch
@@ -47,11 +38,30 @@ export default function Gallery() {
           <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(2rem,5vw,3rem)', color: '#2C1810', fontWeight: 300 }}>
             Selected Works
           </h2>
+          <Link
+            href="/all-photos"
+            className="px-6 py-2 text-xs uppercase tracking-widest border border-[#2C1810] text-[#2C1810] hover:bg-[#2C1810] hover:text-white transition"
+          >
+            View All Photos →
+          </Link>
         </div>
 
         {/* Primary filter tabs */}
         <div className="flex flex-wrap gap-2 mb-3">
-          {CATS.map(cat => (
+          <button
+            key="all"
+            onClick={() => { setFilter('all'); setSubFilter('all') }}
+            className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
+            style={{
+              fontFamily: "'Jost',sans-serif",
+              background: filter === 'all' ? '#2C1810' : 'transparent',
+              color: filter === 'all' ? '#FAF5E9' : '#2C1810',
+              border: `1px solid ${filter === 'all' ? '#2C1810' : 'rgba(44,24,16,0.2)'}`,
+            }}
+          >
+            All Work
+          </button>
+          {CATEGORIES.map(cat => (
             <button
               key={cat.id}
               onClick={() => { setFilter(cat.id); setSubFilter('all') }}
@@ -68,8 +78,8 @@ export default function Gallery() {
           ))}
         </div>
 
-        {/* Sub‑category pills (only if a specific category is active) */}
-        {filter !== 'all' && SUBCATEGORIES[filter] && (
+        {/* Sub‑category pills */}
+        {filter !== 'all' && SUBCATEGORIES[filter as CategoryId] && (
           <div className="flex flex-wrap gap-2 mb-10">
             <button
               onClick={() => setSubFilter('all')}
@@ -83,7 +93,7 @@ export default function Gallery() {
             >
               All
             </button>
-            {SUBCATEGORIES[filter].map(sub => (
+            {SUBCATEGORIES[filter as CategoryId].map(sub => (
               <button
                 key={sub}
                 onClick={() => setSubFilter(sub)}
@@ -116,11 +126,13 @@ export default function Gallery() {
 
         {!loading && projects.length > 0 && (
           <div className="text-center mt-16">
-           <a href="#contact"
-  className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
-  style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-  Discuss Your Project
-</a>
+            <Link
+              href="/all-photos"
+              className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+              style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}
+            >
+              View All Photos
+            </Link>
           </div>
         )}
       </div>
