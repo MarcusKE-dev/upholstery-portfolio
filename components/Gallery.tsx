@@ -1,9 +1,13 @@
+// components/Gallery.tsx
 'use client'
 import { useState, useEffect } from 'react'
 import { getProjects, type Project } from '@/lib/supabase'
 import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
 import Link from 'next/link'
 import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
+
+// 👇 Set how many projects to show on the homepage
+const DISPLAY_LIMIT = 6
 
 export default function Gallery() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -13,15 +17,21 @@ export default function Gallery() {
   const [subFilter, setSubFilter] = useState('all')
 
   useEffect(() => {
-    getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
+    getProjects()
+      .then(setProjects)
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false))
   }, [])
 
-  // Show ALL projects – no completeness filter.
+  // Apply category & sub‑category filters
   const filtered = projects.filter(p => {
     const categoryMatch = filter === 'all' || p.category === filter
     const subMatch = subFilter === 'all' || p.subcategory === subFilter
     return categoryMatch && subMatch
   })
+
+  // Only take the first few for the homepage
+  const displayed = filtered.slice(0, DISPLAY_LIMIT)
 
   return (
     <section id="portfolio" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
@@ -43,10 +53,9 @@ export default function Gallery() {
           </Link>
         </div>
 
-        {/* Primary filter tabs */}
+        {/* Primary category filters */}
         <div className="flex flex-wrap gap-2 mb-3">
           <button
-            key="all"
             onClick={() => { setFilter('all'); setSubFilter('all') }}
             className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
             style={{
@@ -110,17 +119,19 @@ export default function Gallery() {
 
         {error && <p className="text-center py-16 text-sm" style={{ color: '#8B3A3A' }}>{error}</p>}
 
+        {/* Grid – only the limited set */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
-            : filtered.length === 0
+            : displayed.length === 0
             ? <p className="col-span-full text-center py-24" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#8B6F5E', fontSize: '1.25rem' }}>
                 No projects in this category yet.
               </p>
-            : filtered.map(p => <ProjectCard key={p.id} project={p} />)
+            : displayed.map(p => <ProjectCard key={p.id} project={p} />)
           }
         </div>
 
+        {/* "View All Photos" button at the bottom */}
         {!loading && projects.length > 0 && (
           <div className="text-center mt-16">
             <Link

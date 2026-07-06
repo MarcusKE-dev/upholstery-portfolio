@@ -43,6 +43,8 @@ The content is organized as follows:
 app/
   admin/
     page.tsx
+  all-photos/
+    page.tsx
   api/
     inquiry/
       route.ts
@@ -52,6 +54,7 @@ app/
   page.tsx
 components/
   AdminArtisanPhoto.tsx
+  AdminEditModal.tsx
   AdminForm.tsx
   AdminTable.tsx
   ArtisanSection.tsx
@@ -65,6 +68,7 @@ components/
   Testimonials.tsx
   WhatsAppFloat.tsx
 lib/
+  constants.ts
   supabase.ts
 public/
   next.svg
@@ -81,183 +85,64 @@ tsconfig.json
 <files>
 This section contains the contents of the repository's files.
 
-<file path="app/admin/page.tsx">
-'use client'
-import { useState, useEffect } from 'react'
-import { getProjects, type Project } from '@/lib/supabase'
-import AdminForm from '@/components/AdminForm'
-import AdminTable from '@/components/AdminTable'
-import AdminArtisanPhoto from '@/components/AdminArtisanPhoto'
-import { LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
+<file path="app/all-photos/page.tsx">
+import { getProjects } from '@/lib/supabase'
+import Image from 'next/image'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 
-export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
-  const [password, setPassword] = useState('')
-  const [authError, setAuthError] = useState('')
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(false)
+export const metadata = {
+  title: 'All Projects – Atelier Upholstery Nairobi',
+  description: 'Browse all our upholstery projects including before and after photos of bespoke furniture restoration.',
+}
 
-  useEffect(() => {
-    if (sessionStorage.getItem('atelier_admin') === 'true') setAuthed(true)
-  }, [])
-
-  useEffect(() => {
-    if (!authed) return
-    setLoading(true)
-    getProjects().then(setProjects).catch(console.error).finally(() => setLoading(false))
-  }, [authed])
-
-  const handleLogin = () => {
-    if (password === (process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123')) {
-      sessionStorage.setItem('atelier_admin', 'true')
-      setAuthed(true); setAuthError('')
-    } else {
-      setAuthError('Incorrect password.')
-    }
-  }
-
-  if (!authed) return (
-    <div className="min-h-screen flex items-center justify-center px-6"
-      style={{ background: 'radial-gradient(ellipse at center,#F0E6D3 0%,#FDFAF4 100%)' }}>
-      <div className="w-full max-w-sm p-10 border" style={{ borderColor: 'rgba(201,168,76,0.3)', background: '#fff' }}>
-        <div className="text-center mb-10">
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>Atelier</div>
-          <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase', marginTop: 4 }}>Admin Dashboard</div>
-        </div>
-        <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#8B6F5E', fontFamily: "'Jost',sans-serif", marginBottom: 6 }}>Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleLogin()}
-          placeholder="Enter admin password" className="w-full px-4 py-3 outline-none mb-4"
-          style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', color: '#2C1810', fontFamily: "'Jost',sans-serif" }} />
-        {authError && <p className="text-xs mb-4" style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>{authError}</p>}
-        <button onClick={handleLogin} className="w-full py-3.5 text-xs tracking-widest uppercase hover:bg-[#4A2E1E] transition-colors"
-          style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>Sign In</button>
-        <div className="mt-6 text-center">
-          <a href="/" style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase' }}>← Back to Portfolio</a>
-        </div>
-      </div>
-    </div>
-  )
+export default async function AllPhotosPage() {
+  const projects = await getProjects().catch(() => [])
 
   return (
-    <div className="min-h-screen" style={{ background: '#FDFAF4' }}>
-      <header className="sticky top-0 z-10 h-16 flex items-center justify-between px-6 lg:px-12 border-b"
-        style={{ background: '#fff', borderColor: 'rgba(201,168,76,0.2)' }}>
-        <div className="flex items-center gap-3">
-          <LayoutDashboard size={17} color="#C9A84C" strokeWidth={1.5} />
-          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.1rem', color: '#2C1810', fontWeight: 300 }}>Admin Dashboard</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <a href="/" target="_blank" className="hidden md:block text-xs tracking-widest uppercase" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>View Site ↗</a>
-          <button onClick={() => { sessionStorage.removeItem('atelier_admin'); setAuthed(false) }}
-            className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>
-            <LogOut size={13} strokeWidth={1.5} />Logout
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#FDFAF4] py-12 px-6 lg:px-12">
+      <div className="max-w-7xl mx-auto">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-[#8B6F5E] hover:text-[#2C1810] transition mb-8">
+          <ArrowLeft size={16} /> Back to Home
+        </Link>
 
-      <main className="max-w-5xl mx-auto px-6 lg:px-12 py-12 space-y-10">
-        {/* Stats cards - updated for new categories */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            ['Total', projects.length],
-            ['Residential', projects.filter(p => p.category === 'residential').length],
-            ['Window', projects.filter(p => p.category === 'window').length],
-            ['Bedroom', projects.filter(p => p.category === 'bedroom').length],
-          ].map(([l, v]) => (
-            <div key={l} className="p-5 border text-center" style={{ borderColor: 'rgba(201,168,76,0.2)', background: '#fff' }}>
-              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>{v}</div>
-              <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase', marginTop: 4 }}>{l}</div>
+        <h1 className="text-4xl lg:text-5xl font-light mb-8" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
+          All Projects
+        </h1>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {projects.map(project => (
+            <div key={project.id} className="bg-white border border-[rgba(201,168,76,0.2)] overflow-hidden">
+              <div className="relative aspect-square bg-[#E8DFD0]">
+                <Image
+                  src={project.image_url}
+                  alt={project.alt_text || project.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                />
+                {project.before_image_url && (
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
+                    Before/After
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="font-medium text-sm" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
+                  {project.title}
+                </h3>
+                <p className="text-xs text-[#8B6F5E] mt-1">{project.category} {project.subcategory ? `· ${project.subcategory}` : ''}</p>
+                {project.description && (
+                  <p className="text-xs text-[#4A2E1E] mt-2 line-clamp-2">{project.description}</p>
+                )}
+              </div>
             </div>
           ))}
         </div>
 
-        <AdminArtisanPhoto />
-        <AdminForm onProjectAdded={p => setProjects(prev => [p, ...prev])} />
-
-        {loading
-          ? <div className="flex justify-center py-16"><Loader2 size={22} className="animate-spin" color="#C9A84C" /></div>
-          : <AdminTable projects={projects} onDeleted={id => setProjects(prev => prev.filter(p => p.id !== id))} />
-        }
-      </main>
-    </div>
-  )
-}
-</file>
-
-<file path="components/AdminTable.tsx">
-'use client'
-import { useState } from 'react'
-import Image from 'next/image'
-import { Trash2, Loader2 } from 'lucide-react'
-import { deleteProject, type Project } from '@/lib/supabase'
-
-export default function AdminTable({ projects, onDeleted }: { projects: Project[], onDeleted: (id: string) => void }) {
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleDelete = async (p: Project) => {
-    if (confirmId !== p.id) { setConfirmId(p.id); return }
-    try {
-      setDeletingId(p.id); setError(null)
-      await deleteProject(p.id, p.image_url)
-      onDeleted(p.id)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Delete failed')
-    } finally {
-      setDeletingId(null); setConfirmId(null)
-    }
-  }
-
-  if (projects.length === 0)
-    return <div className="text-center py-16 border text-sm" style={{ borderColor: 'rgba(201,168,76,0.2)', color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>No projects yet.</div>
-
-  return (
-    <div className="border" style={{ borderColor: 'rgba(201,168,76,0.25)' }}>
-      <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.2)', background: '#FAF5E9' }}>
-        <h3 className="text-xl font-light" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>All Projects ({projects.length})</h3>
-      </div>
-      {error && <div className="px-6 py-3 text-sm" style={{ background: '#FFF5F5', color: '#8B3A3A' }}>{error}</div>}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr style={{ background: 'rgba(201,168,76,0.06)', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
-              {['Image','Title','Category','Date','Actions'].map(h => (
-                <th key={h} className="text-left px-5 py-3" style={{ fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#8B6F5E', fontFamily: "'Jost',sans-serif", fontWeight: 400 }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {projects.map(p => (
-              <tr key={p.id} className="border-b hover:bg-[#FAF5E9] transition-colors" style={{ borderColor: 'rgba(44,24,16,0.06)' }}>
-                <td className="px-5 py-4">
-                  <div className="relative w-16 h-12 overflow-hidden bg-[#E8DFD0]">
-                    <Image src={p.image_url} alt={p.alt_text} fill className="object-cover" sizes="64px" />
-                  </div>
-                </td>
-                <td className="px-5 py-4">
-                  <div className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>{p.title}</div>
-                  <div className="text-xs mt-0.5 line-clamp-1" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>{p.description}</div>
-                </td>
-                <td className="px-5 py-4">
-                  <span className="text-xs px-2 py-1" style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C', fontFamily: "'Jost',sans-serif" }}>{p.category}</span>
-                </td>
-                <td className="px-5 py-4 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
-                  {new Date(p.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </td>
-                <td className="px-5 py-4">
-                  <button onClick={() => handleDelete(p)} disabled={deletingId === p.id}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs uppercase tracking-widest transition-all"
-                    style={{ border: `1px solid ${confirmId === p.id ? '#8B3A3A' : 'rgba(139,58,58,0.3)'}`, color: '#8B3A3A', background: confirmId === p.id ? 'rgba(139,58,58,0.08)' : 'transparent', fontFamily: "'Jost',sans-serif" }}>
-                    {deletingId === p.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
-                    {confirmId === p.id ? 'Confirm?' : 'Delete'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {projects.length === 0 && (
+          <p className="text-center py-20 text-[#8B6F5E]">No projects added yet.</p>
+        )}
       </div>
     </div>
   )
@@ -615,6 +500,63 @@ export default function WhatsAppFloat() {
 }
 </file>
 
+<file path="lib/constants.ts">
+// Categories and their subcategories (extended for Kenyan upholstery industry)
+
+export const CATEGORIES = [
+  { id: 'residential', label: 'Bespoke Seating' },
+  { id: 'window',      label: 'Window Dressings' },
+  { id: 'bedroom',     label: 'Beds & Accents' },
+  { id: 'automotive',  label: 'Car Seat Covers' },
+] as const
+
+export type CategoryId = typeof CATEGORIES[number]['id']
+
+export const SUBCATEGORIES: Record<CategoryId, string[]> = {
+  residential: [
+    'Sofas',
+    'Dining Sets',
+    'Loose Covers',
+    'Mockets/Ottomans',
+    'Chesterfield Sofas',
+    'Sectional Sofas',
+    'Recliners',
+    'Love Seats',
+    'Accent Chairs',
+    'Banquette Seating',
+  ],
+  window: [
+    'Curtains',
+    'Blinds',
+    'Sheers',
+    'Roman Blinds',
+    'Pleated Curtains',
+    'Grommet Curtains',
+    'Roller Blinds',
+    'Vertical Blinds',
+  ],
+  bedroom: [
+    'Chester Beds',
+    'Scatter Cushions',
+    'Victorian Beds',
+    'Leather Beds',
+    'Rustic Beds',
+    'Tuffed Headboards',
+    'Canopy Beds',
+    'Platform Beds',
+    'Ottoman Beds',
+    'Upholstered Headboards',
+  ],
+  automotive: [
+    'Car Seat Covers',
+    'Leather Seats',
+    'Custom Interiors',
+    'Headliners',
+    'Door Panels',
+  ],
+}
+</file>
+
 <file path="public/next.svg">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
 </file>
@@ -671,6 +613,123 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+</file>
+
+<file path="app/admin/page.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { getProjects, type Project } from '@/lib/supabase'
+import AdminForm from '@/components/AdminForm'
+import AdminTable from '@/components/AdminTable'
+import AdminArtisanPhoto from '@/components/AdminArtisanPhoto'
+import AdminEditModal from '@/components/AdminEditModal'
+import { LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
+
+export default function AdminPage() {
+  const [authed, setAuthed] = useState(false)
+  const [password, setPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
+
+  useEffect(() => {
+    if (sessionStorage.getItem('atelier_admin') === 'true') setAuthed(true)
+  }, [])
+
+  useEffect(() => {
+    if (!authed) return
+    setLoading(true)
+    getProjects().then(setProjects).catch(console.error).finally(() => setLoading(false))
+  }, [authed])
+
+  const handleLogin = () => {
+    if (password === (process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123')) {
+      sessionStorage.setItem('atelier_admin', 'true')
+      setAuthed(true); setAuthError('')
+    } else {
+      setAuthError('Incorrect password.')
+    }
+  }
+
+  if (!authed) return (
+    <div className="min-h-screen flex items-center justify-center px-6"
+      style={{ background: 'radial-gradient(ellipse at center,#F0E6D3 0%,#FDFAF4 100%)' }}>
+      <div className="w-full max-w-sm p-10 border" style={{ borderColor: 'rgba(201,168,76,0.3)', background: '#fff' }}>
+        <div className="text-center mb-10">
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>Atelier</div>
+          <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase', marginTop: 4 }}>Admin Dashboard</div>
+        </div>
+        <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#8B6F5E', fontFamily: "'Jost',sans-serif", marginBottom: 6 }}>Password</label>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleLogin()}
+          placeholder="Enter admin password" className="w-full px-4 py-3 outline-none mb-4"
+          style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', color: '#2C1810', fontFamily: "'Jost',sans-serif" }} />
+        {authError && <p className="text-xs mb-4" style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>{authError}</p>}
+        <button onClick={handleLogin} className="w-full py-3.5 text-xs tracking-widest uppercase hover:bg-[#4A2E1E] transition-colors"
+          style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>Sign In</button>
+        <div className="mt-6 text-center">
+          <a href="/" style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase' }}>← Back to Portfolio</a>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen" style={{ background: '#FDFAF4' }}>
+      <header className="sticky top-0 z-10 h-16 flex items-center justify-between px-6 lg:px-12 border-b"
+        style={{ background: '#fff', borderColor: 'rgba(201,168,76,0.2)' }}>
+        <div className="flex items-center gap-3">
+          <LayoutDashboard size={17} color="#C9A84C" strokeWidth={1.5} />
+          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.1rem', color: '#2C1810', fontWeight: 300 }}>Admin Dashboard</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <a href="/" target="_blank" className="hidden md:block text-xs tracking-widest uppercase" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>View Site ↗</a>
+          <button onClick={() => { sessionStorage.removeItem('atelier_admin'); setAuthed(false) }}
+            className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>
+            <LogOut size={13} strokeWidth={1.5} />Logout
+          </button>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-6 lg:px-12 py-12 space-y-10">
+        {/* Stats cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            ['Total', projects.length],
+            ['Residential', projects.filter(p => p.category === 'residential').length],
+            ['Window', projects.filter(p => p.category === 'window').length],
+            ['Bedroom', projects.filter(p => p.category === 'bedroom').length],
+          ].map(([l, v]) => (
+            <div key={l} className="p-5 border text-center" style={{ borderColor: 'rgba(201,168,76,0.2)', background: '#fff' }}>
+              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>{v}</div>
+              <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase', marginTop: 4 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        <AdminArtisanPhoto />
+        <AdminForm onProjectAdded={p => setProjects(prev => [p, ...prev])} />
+
+        {loading
+          ? <div className="flex justify-center py-16"><Loader2 size={22} className="animate-spin" color="#C9A84C" /></div>
+          : <AdminTable projects={projects} onDeleted={id => setProjects(prev => prev.filter(p => p.id !== id))} onEdit={setEditingProject} />
+        }
+      </main>
+
+      {editingProject && (
+        <AdminEditModal
+          project={editingProject}
+          onUpdate={(updated) => {
+            setProjects(prev => prev.map(p => p.id === updated.id ? updated : p))
+            setEditingProject(null)
+          }}
+          onClose={() => setEditingProject(null)}
+        />
+      )}
+    </div>
+  )
+}
 </file>
 
 <file path="app/globals.css">
@@ -756,30 +815,6 @@ html, body {
   overflow-x: hidden;
   width: 100%;
   position: relative;
-}
-</file>
-
-<file path="app/layout.tsx">
-import type { Metadata } from 'next'
-import './globals.css'
-
-export const metadata: Metadata = {
-  title: 'Atelier Upholstery Nairobi | Bespoke Furniture Restoration',
-  description:
-    'Luxury upholstery and furniture restoration in Nairobi. Sofa repair Nairobi, furniture restoration Karen. High-density orthopedic foam, Italian top-grain leather, Turkish velvet, diamond tufting.',
-  keywords: [
-    'upholstery Nairobi', 'sofa repair Nairobi', 'furniture restoration Karen',
-    'high-density orthopedic foam', 'Italian top-grain leather', 'Turkish velvet',
-    'diamond tufting', 'structural webbing', 'bespoke upholstery Kenya',
-  ],
-}
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  )
 }
 </file>
 
@@ -988,134 +1023,340 @@ export default function AdminArtisanPhoto() {
 }
 </file>
 
-<file path="components/Gallery.tsx">
+<file path="components/AdminEditModal.tsx">
 'use client'
-import { useState, useEffect } from 'react'
-import { getProjects, type Project } from '@/lib/supabase'
-import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
+import { useState, useRef } from 'react'
+import { updateProject, uploadImage, type Project } from '@/lib/supabase'
+import { X, Loader2, Upload, AlertCircle } from 'lucide-react'
+import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
+import imageCompression from 'browser-image-compression'
 
-const CATS = [
-  { id: 'all',        label: 'All Work' },
-  { id: 'residential', label: 'Bespoke Seating' },
-  { id: 'window',      label: 'Window Dressings' },
-  { id: 'bedroom',     label: 'Beds & Accents' },
-  { id: 'automotive',  label: 'Car Seat Covers' },
-]
+export default function AdminEditModal({
+  project,
+  onUpdate,
+  onClose,
+}: {
+  project: Project
+  onUpdate: (updated: Project) => void
+  onClose: () => void
+}) {
+  const [title, setTitle] = useState(project.title)
+  const [description, setDescription] = useState(project.description)
+  const [category, setCategory] = useState<CategoryId>(project.category as CategoryId || 'residential')
+  const [subcategory, setSubcategory] = useState(project.subcategory || '')
+  const [altText, setAltText] = useState(project.alt_text || '')
+  const [newMainFile, setNewMainFile] = useState<File | null>(null)
+  const [newBeforeFile, setNewBeforeFile] = useState<File | null>(null)
+  const [mainPreview, setMainPreview] = useState<string | null>(null)
+  const [beforePreview, setBeforePreview] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const mainFileRef = useRef<HTMLInputElement>(null)
+  const beforeFileRef = useRef<HTMLInputElement>(null)
 
-const SUBCATEGORIES: Record<string, string[]> = {
-  residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
-  window:      ['Curtains', 'Blinds', 'Sheers'],
-  bedroom:     ['Chester Beds', 'Scatter Cushions'],
-  automotive:  ['Car Seat Covers'],
-}
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, isMain: boolean) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (isMain) {
+      setNewMainFile(file)
+      const reader = new FileReader()
+      reader.onload = ev => setMainPreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    } else {
+      setNewBeforeFile(file)
+      const reader = new FileReader()
+      reader.onload = ev => setBeforePreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
 
-export default function Gallery() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState('all')
-  const [subFilter, setSubFilter] = useState('all')
+  const handleSubmit = async () => {
+    // No required fields – everything is optional.
+    // Set defaults for empty values.
+    const finalTitle = title.trim() || 'Untitled'
+    const finalDescription = description.trim() || ''
+    const finalCategory = category || 'residential'
+    const finalSubcategory = subcategory.trim() || ''
+    const finalAlt = altText.trim() || finalTitle
 
-  useEffect(() => {
-    getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
-  }, [])
+    setLoading(true)
+    setError('')
 
-  const filtered = projects.filter(p => {
-    const categoryMatch = filter === 'all' || p.category === filter
-    const subMatch = subFilter === 'all' || p.subcategory === subFilter
-    return categoryMatch && subMatch
-  })
+    try {
+      let newMainUrl = project.image_url
+      let newBeforeUrl = project.before_image_url
+
+      if (newMainFile) {
+        const compressed = await imageCompression(newMainFile, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1200,
+          fileType: 'image/webp',
+          useWebWorker: true,
+        })
+        newMainUrl = await uploadImage(compressed as File)
+      }
+
+      if (newBeforeFile) {
+        const compressed = await imageCompression(newBeforeFile, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1200,
+          fileType: 'image/webp',
+          useWebWorker: true,
+        })
+        newBeforeUrl = await uploadImage(compressed as File)
+      }
+
+      const updates = {
+        title: finalTitle,
+        description: finalDescription,
+        category: finalCategory,
+        subcategory: finalSubcategory,
+        alt_text: finalAlt,
+        image_url: newMainUrl,
+        before_image_url: newBeforeUrl,
+      }
+
+      const { data, error } = await updateProject(project.id, updates)
+      if (error) throw error
+      if (data) onUpdate(data)
+      onClose()
+    } catch (e: any) {
+      setError(e.message || 'Update failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <section id="portfolio" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
-        <div className="flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Portfolio</span>
-        </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white max-w-lg w-full p-6 relative max-h-[90vh] overflow-auto">
+        <button onClick={onClose} className="absolute top-3 right-3">
+          <X size={20} />
+        </button>
+        <h3 className="text-xl font-light mb-4" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
+          Edit Project
+        </h3>
 
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
-          <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(2rem,5vw,3rem)', color: '#2C1810', fontWeight: 300 }}>
-            Selected Works
-          </h2>
-        </div>
-
-        {/* Primary filter tabs */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          {CATS.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => { setFilter(cat.id); setSubFilter('all') }}
-              className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
-              style={{
-                fontFamily: "'Jost',sans-serif",
-                background: filter === cat.id ? '#2C1810' : 'transparent',
-                color: filter === cat.id ? '#FAF5E9' : '#2C1810',
-                border: `1px solid ${filter === cat.id ? '#2C1810' : 'rgba(44,24,16,0.2)'}`,
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Sub‑category pills (only if a specific category is active) */}
-        {filter !== 'all' && SUBCATEGORIES[filter] && (
-          <div className="flex flex-wrap gap-2 mb-10">
-            <button
-              onClick={() => setSubFilter('all')}
-              className="px-3 py-1 text-xs rounded-full transition-all"
-              style={{
-                fontFamily: "'Jost',sans-serif",
-                background: subFilter === 'all' ? '#C9A84C' : 'transparent',
-                color: subFilter === 'all' ? '#fff' : '#C9A84C',
-                border: '1px solid #C9A84C',
-              }}
-            >
-              All
-            </button>
-            {SUBCATEGORIES[filter].map(sub => (
-              <button
-                key={sub}
-                onClick={() => setSubFilter(sub)}
-                className="px-3 py-1 text-xs rounded-full transition-all"
-                style={{
-                  fontFamily: "'Jost',sans-serif",
-                  background: subFilter === sub ? '#C9A84C' : 'transparent',
-                  color: subFilter === sub ? '#fff' : '#C9A84C',
-                  border: '1px solid #C9A84C',
-                }}
-              >
-                {sub}
-              </button>
-            ))}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Title (optional)</label>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full px-4 py-3 outline-none"
+              style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+              placeholder="Leave blank to keep 'Untitled'"
+            />
           </div>
-        )}
 
-        {error && <p className="text-center py-16 text-sm" style={{ color: '#8B3A3A' }}>{error}</p>}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
-            : filtered.length === 0
-            ? <p className="col-span-full text-center py-24" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#8B6F5E', fontSize: '1.25rem' }}>
-                No projects in this category yet.
-              </p>
-            : filtered.map(p => <ProjectCard key={p.id} project={p} />)
-          }
-        </div>
-
-        {!loading && projects.length > 0 && (
-          <div className="text-center mt-16">
-           <a href="#contact"
-  className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
-  style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
-  Discuss Your Project
-</a>
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Description (optional)</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 outline-none"
+              style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+              placeholder="Add a description later"
+            />
           </div>
-        )}
+
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Category (optional)</label>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value as CategoryId)}
+              className="w-full px-4 py-3 outline-none"
+              style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+            >
+              {CATEGORIES.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Subcategory (optional)</label>
+            <select
+              value={subcategory}
+              onChange={e => setSubcategory(e.target.value)}
+              className="w-full px-4 py-3 outline-none"
+              style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+            >
+              <option value="">None</option>
+              {SUBCATEGORIES[category]?.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Alt Text (optional)</label>
+            <input
+              value={altText}
+              onChange={e => setAltText(e.target.value)}
+              className="w-full px-4 py-3 outline-none"
+              style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)' }}
+            />
+          </div>
+
+          {/* Current Main Image */}
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Current Main Image</label>
+            <img src={project.image_url} alt="Current main" className="max-h-32 object-contain border" />
+          </div>
+
+          {/* Replace Main Image */}
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Replace Main Image (optional)</label>
+            <div
+              className="border-2 border-dashed p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+              style={{ borderColor: 'rgba(201,168,76,0.4)' }}
+              onClick={() => mainFileRef.current?.click()}
+            >
+              {mainPreview ? (
+                <img src={mainPreview} alt="New main preview" className="max-h-24 object-contain" />
+              ) : (
+                <>
+                  <Upload size={20} color="#C9A84C" />
+                  <p className="text-sm" style={{ color: '#2C1810' }}>Click to select new main image</p>
+                </>
+              )}
+              <input ref={mainFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(e, true)} />
+            </div>
+          </div>
+
+          {/* Current Before Image (if any) */}
+          {project.before_image_url && (
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Current Before Image</label>
+              <img src={project.before_image_url} alt="Current before" className="max-h-24 object-contain border" />
+            </div>
+          )}
+
+          {/* Replace Before Image */}
+          <div>
+            <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Replace/Add Before Image (optional)</label>
+            <div
+              className="border-2 border-dashed p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+              style={{ borderColor: 'rgba(201,168,76,0.4)' }}
+              onClick={() => beforeFileRef.current?.click()}
+            >
+              {beforePreview ? (
+                <img src={beforePreview} alt="New before preview" className="max-h-24 object-contain" />
+              ) : (
+                <>
+                  <Upload size={20} color="#C9A84C" />
+                  <p className="text-sm" style={{ color: '#2C1810' }}>Click to select new before image</p>
+                </>
+              )}
+              <input ref={beforeFileRef} type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(e, false)} />
+            </div>
+          </div>
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full py-3 bg-[#2C1810] text-white text-xs uppercase tracking-widest disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+            {loading ? 'Updating...' : 'Update Project'}
+          </button>
+        </div>
       </div>
-    </section>
+    </div>
+  )
+}
+</file>
+
+<file path="components/AdminTable.tsx">
+'use client'
+import { useState } from 'react'
+import Image from 'next/image'
+import { Trash2, Loader2, Pencil } from 'lucide-react'
+import { deleteProject, type Project } from '@/lib/supabase'
+
+export default function AdminTable({ projects, onDeleted, onEdit }: { 
+  projects: Project[], 
+  onDeleted: (id: string) => void,
+  onEdit: (p: Project) => void
+}) {
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleDelete = async (p: Project) => {
+    if (confirmId !== p.id) { setConfirmId(p.id); return }
+    try {
+      setDeletingId(p.id); setError(null)
+      await deleteProject(p.id, p.image_url, p.before_image_url)
+      onDeleted(p.id)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Delete failed')
+    } finally {
+      setDeletingId(null); setConfirmId(null)
+    }
+  }
+
+  if (projects.length === 0)
+    return <div className="text-center py-16 border text-sm" style={{ borderColor: 'rgba(201,168,76,0.2)', color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>No projects yet.</div>
+
+  return (
+    <div className="border" style={{ borderColor: 'rgba(201,168,76,0.25)' }}>
+      <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.2)', background: '#FAF5E9' }}>
+        <h3 className="text-xl font-light" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>All Projects ({projects.length})</h3>
+      </div>
+      {error && <div className="px-6 py-3 text-sm" style={{ background: '#FFF5F5', color: '#8B3A3A' }}>{error}</div>}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr style={{ background: 'rgba(201,168,76,0.06)', borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
+              {['Image','Title','Category','Date','Actions'].map(h => (
+                <th key={h} className="text-left px-5 py-3" style={{ fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#8B6F5E', fontFamily: "'Jost',sans-serif", fontWeight: 400 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {projects.map(p => (
+              <tr key={p.id} className="border-b hover:bg-[#FAF5E9] transition-colors" style={{ borderColor: 'rgba(44,24,16,0.06)' }}>
+                <td className="px-5 py-4">
+                  <div className="relative w-16 h-12 overflow-hidden bg-[#E8DFD0]">
+                    <Image src={p.image_url} alt={p.alt_text} fill className="object-cover" sizes="64px" />
+                  </div>
+                </td>
+                <td className="px-5 py-4">
+                  <div className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>{p.title}</div>
+                  <div className="text-xs mt-0.5 line-clamp-1" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>{p.description}</div>
+                </td>
+                <td className="px-5 py-4">
+                  <span className="text-xs px-2 py-1" style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C', fontFamily: "'Jost',sans-serif" }}>{p.category}</span>
+                  {p.subcategory && <span className="text-xs ml-1 px-2 py-1" style={{ background: 'rgba(44,24,16,0.05)', color: '#8B6F5E' }}>{p.subcategory}</span>}
+                </td>
+                <td className="px-5 py-4 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+                  {new Date(p.created_at).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </td>
+                <td className="px-5 py-4 flex gap-2">
+                  <button
+                    onClick={() => onEdit(p)}
+                    className="p-2 border border-[#C9A84C] text-[#C9A84C] hover:bg-[#C9A84C] hover:text-white transition"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={() => handleDelete(p)} disabled={deletingId === p.id}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs uppercase tracking-widest transition-all"
+                    style={{ border: `1px solid ${confirmId === p.id ? '#8B3A3A' : 'rgba(139,58,58,0.3)'}`, color: '#8B3A3A', background: confirmId === p.id ? 'rgba(139,58,58,0.08)' : 'transparent', fontFamily: "'Jost',sans-serif" }}>
+                    {deletingId === p.id ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                    {confirmId === p.id ? 'Confirm?' : 'Delete'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }
 </file>
@@ -1193,122 +1434,6 @@ export default function Navbar() {
       </div>
     </header>
   )
-}
-</file>
-
-<file path="lib/supabase.ts">
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-export type Project = {
-  id: string
-  created_at: string
-  title: string
-  description: string
-  category: string
-  subcategory: string
-  image_url: string
-  alt_text: string
-}
-
-export const BUCKET = 'portfolio-uploads'
-
-// ==================== IMAGE HANDLING ====================
-export async function uploadImage(file: File): Promise<string> {
-  const ext = file.name.split('.').pop()
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filename, file, { cacheControl: '3600', upsert: false })
-  if (error) throw error
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
-  return data.publicUrl
-}
-
-export async function deleteImage(publicUrl: string): Promise<void> {
-  const marker = `/${BUCKET}/`
-  const idx = publicUrl.indexOf(marker)
-  if (idx === -1) return
-  const filePath = publicUrl.slice(idx + marker.length)
-  const { error } = await supabase.storage.from(BUCKET).remove([filePath])
-  if (error) throw error
-}
-
-// ==================== PROJECTS ====================
-export async function getProjects(): Promise<Project[]> {
-  const { data, error } = await supabase
-    .from('projects')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as Project[]
-}
-
-export async function insertProject(
-  project: Omit<Project, 'id' | 'created_at'>
-): Promise<{ data: Project | null; error: any }> {
-  const { data, error } = await supabase
-    .from('projects')
-    .insert(project)
-    .select()
-    .single()
-
-  if (error) {
-    console.error('[insertProject] Supabase error:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-    })
-  }
-
-  return { data, error }
-}
-
-export async function deleteProject(id: string, imageUrl: string): Promise<void> {
-  const { error } = await supabase.from('projects').delete().eq('id', id)
-  if (error) throw error
-  await deleteImage(imageUrl)
-}
-
-// ==================== ARTISAN PHOTO (site_settings) ====================
-export async function getArtisanImage(): Promise<string | null> {
-  const { data, error } = await supabase
-    .from('site_settings')
-    .select('value')
-    .eq('key', 'artisan_image_url')
-    .maybeSingle();
-
-  if (error) {
-    console.error('[getArtisanImage] Supabase error:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-    });
-    return null;
-  }
-  console.log('[getArtisanImage] Retrieved value:', data?.value);
-  return data?.value ?? null;
-}
-
-export async function updateArtisanImage(imageUrl: string): Promise<{ error: any }> {
-  console.log('[updateArtisanImage] Attempting to save:', imageUrl);
-  const { error } = await supabase
-    .from('site_settings')
-    .upsert(
-      { key: 'artisan_image_url', value: imageUrl, updated_at: new Date().toISOString() },
-      { onConflict: 'key' }
-    );
-  if (error) {
-    console.error('[updateArtisanImage] Upsert error:', error);
-  } else {
-    console.log('[updateArtisanImage] Successfully saved');
-  }
-  return { error };
 }
 </file>
 
@@ -1478,164 +1603,51 @@ export default config
 }
 </file>
 
-<file path="components/AdminForm.tsx">
-'use client'
-import { useState, useRef } from 'react'
-import imageCompression from 'browser-image-compression'
-import { uploadImage, insertProject, type Project } from '@/lib/supabase'
-import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+<file path="app/layout.tsx">
+import type { Metadata } from 'next'
+import './globals.css'
 
-const SUB_OPTIONS: Record<string, string[]> = {
-  residential: ['Sofas', 'Dining Sets', 'Loose Covers', 'Mockets/Ottomans'],
-  window:      ['Curtains', 'Blinds', 'Sheers'],
-  bedroom:     ['Chester Beds', 'Scatter Cushions'],
-  automotive:  ['Car Seat Covers'],
+export const metadata: Metadata = {
+  title: 'Atelier Upholstery Nairobi | Bespoke Furniture Restoration',
+  description:
+    'Luxury upholstery and furniture restoration in Nairobi. Sofa repair Nairobi, furniture restoration Karen. High-density orthopedic foam, Italian top-grain leather, Turkish velvet, diamond tufting.',
+  keywords: [
+    'upholstery Nairobi', 'sofa repair Nairobi', 'furniture restoration Karen',
+    'high-density orthopedic foam', 'Italian top-grain leather', 'Turkish velvet',
+    'diamond tufting', 'structural webbing', 'bespoke upholstery Kenya',
+  ],
+  openGraph: {
+    title: 'Atelier Upholstery Nairobi – Bespoke Furniture Restoration',
+    description: 'Expert upholstery and furniture restoration in Nairobi. Before & after photos, premium materials, and master craftsmanship.',
+    url: 'https://your-domain.com',
+    siteName: 'Atelier Upholstery',
+    images: [
+      {
+        url: 'https://your-domain.com/og-image.jpg', // replace with actual OG image
+        width: 1200,
+        height: 630,
+        alt: 'Atelier Upholstery',
+      },
+    ],
+    locale: 'en_KE',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Atelier Upholstery Nairobi – Bespoke Furniture Restoration',
+    description: 'Expert upholstery and furniture restoration in Nairobi. Before & after photos, premium materials, and master craftsmanship.',
+    images: ['https://your-domain.com/og-image.jpg'],
+  },
+  alternates: {
+    canonical: 'https://your-domain.com',
+  },
 }
 
-export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Project) => void }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<string>('residential')  // default non-empty
-  const [subcategory, setSubcategory] = useState<string>('')
-  const [altText, setAltText] = useState('')
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [status, setStatus] = useState<'idle'|'compressing'|'uploading'|'saving'|'done'|'error'>('idle')
-  const [errorMsg, setErrorMsg] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    setFile(f)
-    const reader = new FileReader()
-    reader.onload = ev => setPreview(ev.target?.result as string)
-    reader.readAsDataURL(f)
-  }
-
-  const handleSubmit = async () => {
-    if (!title || !description || !file || !category) {
-      setErrorMsg('Fill all fields: Title, Description, Category, and select an image.')
-      setStatus('error')
-      return
-    }
-    try {
-      setErrorMsg('')
-      setStatus('compressing')
-
-      const compressed = await imageCompression(file, {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1200,
-        fileType: 'image/webp',
-        useWebWorker: true,
-      })
-
-      setStatus('uploading')
-      const imageUrl = await uploadImage(compressed as File)
-
-      setStatus('saving')
-      const { data, error } = await insertProject({
-        title,
-        description,
-        category,
-        subcategory: subcategory || '',
-        image_url: imageUrl,
-        alt_text: altText || title,
-      })
-
-      if (error) {
-        throw new Error(`Database insert failed: ${error.message} (code: ${error.code})`)
-      }
-
-      if (data) onProjectAdded(data)
-
-      setStatus('done')
-      setTimeout(() => {
-        setTitle('')
-        setDescription('')
-        setAltText('')
-        setFile(null)
-        setPreview(null)
-        setCategory('residential')
-        setSubcategory('')
-        setStatus('idle')
-        if (fileRef.current) fileRef.current.value = ''
-      }, 2000)
-    } catch (e: unknown) {
-      console.error('Upload error:', e)
-      setErrorMsg(e instanceof Error ? e.message : 'An error occurred')
-      setStatus('error')
-    }
-  }
-
-  const inp = { background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', color: '#2C1810', fontFamily: "'Jost',sans-serif", fontSize: '0.875rem' }
-  const lbl = { display: 'block' as const, fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase' as const, color: '#8B6F5E', fontFamily: "'Jost',sans-serif", marginBottom: 6 }
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-8 border" style={{ borderColor: 'rgba(201,168,76,0.25)', background: '#fff' }}>
-      <h2 className="text-2xl font-light mb-8" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>Upload New Project</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label style={lbl}>Title</label>
-          <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Victorian Chesterfield Restoration" className="w-full px-4 py-3 outline-none" style={inp} />
-        </div>
-        <div>
-          <label style={lbl}>Category</label>
-          <select value={category} onChange={e => { setCategory(e.target.value); setSubcategory('') }} className="w-full px-4 py-3 outline-none" style={inp}>
-            <option value="residential">Bespoke Seating</option>
-            <option value="window">Window Dressings</option>
-            <option value="bedroom">Beds &amp; Accents</option>
-            <option value="automotive">Car Seat Covers</option>
-          </select>
-          {category && SUB_OPTIONS[category] && (
-            <div className="mt-3">
-              <label style={lbl}>Sub‑category</label>
-              <select value={subcategory} onChange={e => setSubcategory(e.target.value)} className="w-full px-4 py-3 outline-none" style={inp}>
-                <option value="">— Select sub‑category —</option>
-                {SUB_OPTIONS[category].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          )}
-        </div>
-        <div className="md:col-span-2">
-          <label style={lbl}>Description</label>
-          <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe the work done, materials used…" rows={3} className="w-full px-4 py-3 outline-none resize-none" style={inp} />
-        </div>
-        <div className="md:col-span-2">
-          <label style={lbl}>Alt Text (SEO)</label>
-          <input type="text" value={altText} onChange={e => setAltText(e.target.value)} placeholder="e.g. Restored leather sofa Karen Nairobi" className="w-full px-4 py-3 outline-none" style={inp} />
-        </div>
-        <div className="md:col-span-2">
-          <label style={lbl}>Project Image</label>
-          <div className="border-2 border-dashed p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
-            style={{ borderColor: 'rgba(201,168,76,0.4)' }} onClick={() => fileRef.current?.click()}>
-            {preview
-              ? <img src={preview} alt="Preview" className="max-h-48 object-contain" />
-              : <>
-                  <Upload size={26} color="#C9A84C" strokeWidth={1.5} />
-                  <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>Click to select image</p>
-                  <p className="text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>JPEG, PNG, WebP · auto-compressed</p>
-                </>
-            }
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-          </div>
-          {file && <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>{file.name} ({(file.size / 1024).toFixed(0)} KB)</p>}
-        </div>
-      </div>
-
-      {status === 'error' && <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#8B3A3A' }}><AlertCircle size={13} />{errorMsg}</div>}
-      {status === 'done' && <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: '#3A7A3A' }}><CheckCircle size={13} />Project uploaded successfully!</div>}
-
-      <button onClick={handleSubmit} disabled={['compressing','uploading','saving','done'].includes(status)}
-        className="mt-8 w-full py-4 text-xs tracking-widest uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-60"
-        style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
-        {status === 'compressing' && <><Loader2 size={13} className="animate-spin" />Compressing…</>}
-        {status === 'uploading' && <><Loader2 size={13} className="animate-spin" />Uploading…</>}
-        {status === 'saving' && <><Loader2 size={13} className="animate-spin" />Saving…</>}
-        {status === 'done' && <><CheckCircle size={13} />Saved!</>}
-        {(status === 'idle' || status === 'error') && <>Upload Project</>}
-      </button>
-    </div>
+    <html lang="en">
+      <body>{children}</body>
+    </html>
   )
 }
 </file>
@@ -1888,6 +1900,126 @@ export default function InquiryForm() {
 }
 </file>
 
+<file path="lib/supabase.ts">
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+export type Project = {
+  id: string
+  created_at: string
+  title: string
+  description: string
+  category: string
+  subcategory: string
+  image_url: string       // main/after image
+  before_image_url?: string | null // optional before photo
+  alt_text: string
+}
+
+export const BUCKET = 'portfolio-uploads'
+
+// ==================== IMAGE HANDLING ====================
+export async function uploadImage(file: File): Promise<string> {
+  const ext = file.name.split('.').pop()
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(filename, file, { cacheControl: '3600', upsert: false })
+  if (error) throw error
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
+  return data.publicUrl
+}
+
+export async function deleteImage(publicUrl: string): Promise<void> {
+  const marker = `/${BUCKET}/`
+  const idx = publicUrl.indexOf(marker)
+  if (idx === -1) return
+  const filePath = publicUrl.slice(idx + marker.length)
+  const { error } = await supabase.storage.from(BUCKET).remove([filePath])
+  if (error) throw error
+}
+
+// ==================== PROJECTS ====================
+export async function getProjects(): Promise<Project[]> {
+  const { data, error } = await supabase
+    .from('projects')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as Project[]
+}
+
+export async function insertProject(
+  project: Omit<Project, 'id' | 'created_at'>
+): Promise<{ data: Project | null; error: any }> {
+  const { data, error } = await supabase
+    .from('projects')
+    .insert(project)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('[insertProject] Supabase error:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    })
+  }
+
+  return { data, error }
+}
+
+export async function updateProject(
+  id: string,
+  updates: Partial<Omit<Project, 'id' | 'created_at'>>
+): Promise<{ data: Project | null; error: any }> {
+  const { data, error } = await supabase
+    .from('projects')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  return { data, error }
+}
+
+export async function deleteProject(id: string, imageUrl: string, beforeImageUrl?: string | null): Promise<void> {
+  const { error } = await supabase.from('projects').delete().eq('id', id)
+  if (error) throw error
+  await deleteImage(imageUrl)
+  if (beforeImageUrl) await deleteImage(beforeImageUrl)
+}
+
+// ==================== ARTISAN PHOTO (site_settings) ====================
+export async function getArtisanImage(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'artisan_image_url')
+    .maybeSingle();
+
+  if (error) {
+    console.error('[getArtisanImage] Supabase error:', error);
+    return null;
+  }
+  return data?.value ?? null;
+}
+
+export async function updateArtisanImage(imageUrl: string): Promise<{ error: any }> {
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert(
+      { key: 'artisan_image_url', value: imageUrl, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+  return { error };
+}
+</file>
+
 <file path="app/api/inquiry/route.ts">
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
@@ -1978,6 +2110,443 @@ export async function POST(req: NextRequest) {
     console.error('Inquiry API error:', err)
     return NextResponse.json({ error: 'Server error.' }, { status: 500 })
   }
+}
+</file>
+
+<file path="components/AdminForm.tsx">
+'use client'
+import { useState, useRef } from 'react'
+import imageCompression from 'browser-image-compression'
+import { uploadImage, insertProject, type Project } from '@/lib/supabase'
+import { Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
+
+export default function AdminForm({ onProjectAdded }: { onProjectAdded: (p: Project) => void }) {
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState<CategoryId>('residential')
+  const [subcategory, setSubcategory] = useState('')
+  const [altText, setAltText] = useState('')
+  const [file, setFile] = useState<File | null>(null)          // main/after image
+  const [beforeFile, setBeforeFile] = useState<File | null>(null) // before image (optional)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [beforePreview, setBeforePreview] = useState<string | null>(null)
+  const [status, setStatus] = useState<'idle'|'compressing'|'uploading'|'saving'|'done'|'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+  const beforeFileRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>, isBefore: boolean) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (isBefore) {
+      setBeforeFile(f)
+      const reader = new FileReader()
+      reader.onload = ev => setBeforePreview(ev.target?.result as string)
+      reader.readAsDataURL(f)
+    } else {
+      setFile(f)
+      const reader = new FileReader()
+      reader.onload = ev => setPreview(ev.target?.result as string)
+      reader.readAsDataURL(f)
+    }
+  }
+
+  const handleSubmit = async () => {
+    // Only require the main image
+    if (!file) {
+      setErrorMsg('Please select a main image.')
+      setStatus('error')
+      return
+    }
+
+    try {
+      setErrorMsg('')
+      setStatus('compressing')
+
+      // Compress main image
+      const compressedMain = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1200,
+        fileType: 'image/webp',
+        useWebWorker: true,
+      })
+
+      // Compress before image if provided
+      let beforeImageUrl: string | null = null
+      if (beforeFile) {
+        const compressedBefore = await imageCompression(beforeFile, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1200,
+          fileType: 'image/webp',
+          useWebWorker: true,
+        })
+        setStatus('uploading')
+        beforeImageUrl = await uploadImage(compressedBefore as File)
+      }
+
+      setStatus('uploading')
+      const mainImageUrl = await uploadImage(compressedMain as File)
+
+      setStatus('saving')
+      // Build project object with defaults for missing fields
+      const finalTitle = title.trim() || 'Untitled'
+      const finalDescription = description.trim() || ''
+      const finalCategory = category || 'residential'
+      const finalSubcategory = subcategory || ''
+      const finalAlt = altText.trim() || finalTitle
+
+      const projectData = {
+        title: finalTitle,
+        description: finalDescription,
+        category: finalCategory,
+        subcategory: finalSubcategory,
+        image_url: mainImageUrl,
+        before_image_url: beforeImageUrl,
+        alt_text: finalAlt,
+      }
+
+      const { data, error } = await insertProject(projectData)
+
+      if (error) throw new Error(`Database insert failed: ${error.message} (code: ${error.code})`)
+
+      if (data) {
+        onProjectAdded(data)
+        // Reset form
+        setTitle('')
+        setDescription('')
+        setCategory('residential')
+        setSubcategory('')
+        setAltText('')
+        setFile(null)
+        setBeforeFile(null)
+        setPreview(null)
+        setBeforePreview(null)
+        setStatus('done')
+        setTimeout(() => setStatus('idle'), 2000)
+      }
+    } catch (e: unknown) {
+      console.error(e)
+      setErrorMsg(e instanceof Error ? e.message : 'Upload failed')
+      setStatus('error')
+    }
+  }
+
+  return (
+    <div className="border p-6" style={{ borderColor: 'rgba(201,168,76,0.25)', background: '#fff' }}>
+      <h3 className="text-xl font-light mb-6" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
+        Add New Project
+      </h3>
+
+      <div className="space-y-4">
+        {/* Title - optional */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Title (optional)</label>
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+            placeholder="e.g. Classic Chesterfield Sofa"
+          />
+        </div>
+
+        {/* Description - optional */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Description (optional)</label>
+          <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={3}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+            placeholder="Brief description of the project..."
+          />
+        </div>
+
+        {/* Category - optional, default residential */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Category (optional)</label>
+          <select
+            value={category}
+            onChange={e => { setCategory(e.target.value as CategoryId); setSubcategory('') }}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+          >
+            {CATEGORIES.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.label}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Subcategory - optional */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Subcategory (optional)</label>
+          <select
+            value={subcategory}
+            onChange={e => setSubcategory(e.target.value)}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+          >
+            <option value="">None</option>
+            {SUBCATEGORIES[category as CategoryId]?.map(sub => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Alt Text - optional */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Alt Text (optional)</label>
+          <input
+            type="text"
+            value={altText}
+            onChange={e => setAltText(e.target.value)}
+            className="w-full px-4 py-3 outline-none"
+            style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', fontFamily: "'Jost',sans-serif" }}
+            placeholder="SEO-friendly description"
+          />
+        </div>
+
+        {/* Main Image Upload */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Main Image (required)</label>
+          <div
+            className="border-2 border-dashed p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+            style={{ borderColor: 'rgba(201,168,76,0.4)' }}
+            onClick={() => fileRef.current?.click()}
+          >
+            {preview ? (
+              <img src={preview} alt="Main preview" className="max-h-32 object-contain" />
+            ) : (
+              <>
+                <Upload size={26} color="#C9A84C" strokeWidth={1.5} />
+                <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+                  Click to select main image
+                </p>
+                <p className="text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+                  JPEG, PNG, WebP · auto‑compressed to WebP ≤ 1200px
+                </p>
+              </>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => handleFile(e, false)}
+            />
+          </div>
+          {file && (
+            <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+              {file.name} ({(file.size / 1024).toFixed(0)} KB)
+            </p>
+          )}
+        </div>
+
+        {/* Before Image Upload (optional) */}
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-[#8B6F5E] mb-1">Before Image (optional)</label>
+          <div
+            className="border-2 border-dashed p-6 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-[#FAF5E9] transition-colors"
+            style={{ borderColor: 'rgba(201,168,76,0.3)' }}
+            onClick={() => beforeFileRef.current?.click()}
+          >
+            {beforePreview ? (
+              <img src={beforePreview} alt="Before preview" className="max-h-32 object-contain" />
+            ) : (
+              <>
+                <Upload size={22} color="#C9A84C" strokeWidth={1.5} />
+                <p className="text-sm font-light" style={{ color: '#2C1810', fontFamily: "'Jost',sans-serif" }}>
+                  Click to select before photo (optional)
+                </p>
+              </>
+            )}
+            <input
+              ref={beforeFileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={e => handleFile(e, true)}
+            />
+          </div>
+          {beforeFile && (
+            <p className="mt-2 text-xs" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
+              {beforeFile.name} ({(beforeFile.size / 1024).toFixed(0)} KB)
+            </p>
+          )}
+        </div>
+
+        {status === 'error' && (
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#8B3A3A' }}>
+            <AlertCircle size={13} />
+            {errorMsg}
+          </div>
+        )}
+        {status === 'done' && (
+          <div className="flex items-center gap-2 text-sm" style={{ color: '#3A7A3A' }}>
+            <CheckCircle size={13} />
+            Project added successfully!
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={['compressing', 'uploading', 'saving', 'done'].includes(status)}
+          className="w-full py-3 text-xs tracking-widest uppercase flex items-center justify-center gap-3 transition-all disabled:opacity-60"
+          style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}
+        >
+          {status === 'compressing' && <><Loader2 size={13} className="animate-spin" />Compressing…</>}
+          {status === 'uploading' && <><Loader2 size={13} className="animate-spin" />Uploading…</>}
+          {status === 'saving' && <><Loader2 size={13} className="animate-spin" />Saving…</>}
+          {status === 'done' && <><CheckCircle size={13} />Saved!</>}
+          {(status === 'idle' || status === 'error') && <>Add Project</>}
+        </button>
+      </div>
+    </div>
+  )
+}
+</file>
+
+<file path="components/Gallery.tsx">
+'use client'
+import { useState, useEffect } from 'react'
+import { getProjects, type Project } from '@/lib/supabase'
+import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
+import Link from 'next/link'
+import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
+
+export default function Gallery() {
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [filter, setFilter] = useState('all')
+  const [subFilter, setSubFilter] = useState('all')
+
+  useEffect(() => {
+    getProjects().then(setProjects).catch(e => setError(e.message)).finally(() => setLoading(false))
+  }, [])
+
+  // Show ALL projects – no completeness filter.
+  const filtered = projects.filter(p => {
+    const categoryMatch = filter === 'all' || p.category === filter
+    const subMatch = subFilter === 'all' || p.subcategory === subFilter
+    return categoryMatch && subMatch
+  })
+
+  return (
+    <section id="portfolio" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
+      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
+          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Portfolio</span>
+        </div>
+
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">
+          <h2 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(2rem,5vw,3rem)', color: '#2C1810', fontWeight: 300 }}>
+            Selected Works
+          </h2>
+          <Link
+            href="/all-photos"
+            className="px-6 py-2 text-xs uppercase tracking-widest border border-[#2C1810] text-[#2C1810] hover:bg-[#2C1810] hover:text-white transition"
+          >
+            View All Photos →
+          </Link>
+        </div>
+
+        {/* Primary filter tabs */}
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button
+            key="all"
+            onClick={() => { setFilter('all'); setSubFilter('all') }}
+            className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
+            style={{
+              fontFamily: "'Jost',sans-serif",
+              background: filter === 'all' ? '#2C1810' : 'transparent',
+              color: filter === 'all' ? '#FAF5E9' : '#2C1810',
+              border: `1px solid ${filter === 'all' ? '#2C1810' : 'rgba(44,24,16,0.2)'}`,
+            }}
+          >
+            All Work
+          </button>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => { setFilter(cat.id); setSubFilter('all') }}
+              className="px-4 py-2 text-xs tracking-widest uppercase transition-all duration-200"
+              style={{
+                fontFamily: "'Jost',sans-serif",
+                background: filter === cat.id ? '#2C1810' : 'transparent',
+                color: filter === cat.id ? '#FAF5E9' : '#2C1810',
+                border: `1px solid ${filter === cat.id ? '#2C1810' : 'rgba(44,24,16,0.2)'}`,
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sub‑category pills */}
+        {filter !== 'all' && SUBCATEGORIES[filter as CategoryId] && (
+          <div className="flex flex-wrap gap-2 mb-10">
+            <button
+              onClick={() => setSubFilter('all')}
+              className="px-3 py-1 text-xs rounded-full transition-all"
+              style={{
+                fontFamily: "'Jost',sans-serif",
+                background: subFilter === 'all' ? '#C9A84C' : 'transparent',
+                color: subFilter === 'all' ? '#fff' : '#C9A84C',
+                border: '1px solid #C9A84C',
+              }}
+            >
+              All
+            </button>
+            {SUBCATEGORIES[filter as CategoryId].map(sub => (
+              <button
+                key={sub}
+                onClick={() => setSubFilter(sub)}
+                className="px-3 py-1 text-xs rounded-full transition-all"
+                style={{
+                  fontFamily: "'Jost',sans-serif",
+                  background: subFilter === sub ? '#C9A84C' : 'transparent',
+                  color: subFilter === sub ? '#fff' : '#C9A84C',
+                  border: '1px solid #C9A84C',
+                }}
+              >
+                {sub}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {error && <p className="text-center py-16 text-sm" style={{ color: '#8B3A3A' }}>{error}</p>}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          {loading
+            ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
+            : filtered.length === 0
+            ? <p className="col-span-full text-center py-24" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#8B6F5E', fontSize: '1.25rem' }}>
+                No projects in this category yet.
+              </p>
+            : filtered.map(p => <ProjectCard key={p.id} project={p} />)
+          }
+        </div>
+
+        {!loading && projects.length > 0 && (
+          <div className="text-center mt-16">
+            <Link
+              href="/all-photos"
+              className="inline-flex px-8 py-4 text-xs tracking-widest uppercase border transition-all hover:bg-[#2C1810] hover:text-[#FAF5E9] text-[#2C1810]"
+              style={{ borderColor: '#2C1810', fontFamily: "'Jost',sans-serif" }}
+            >
+              View All Photos
+            </Link>
+          </div>
+        )}
+      </div>
+    </section>
+  )
 }
 </file>
 
