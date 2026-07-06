@@ -22,18 +22,39 @@ export default function Contact() {
               Every project begins with a conversation. Tell us about your piece and we will guide you to the best solution.
             </p>
             <div className="space-y-4 mb-8">
-              {[
-                [MapPin, 'Nairobi, Kenya · Karen · Lavington · Westlands'],
-                [Phone, `+${number}`],
-                [Mail, 'charlesupholstery@gmail.com'],
-                [Clock, 'Mon – Sat · 8:00 AM – 6:00 PM'],
-              ].map(([Icon, text]: any) => (
-                <div key={text} className="flex items-start gap-4">
-                  <Icon size={15} color="#C9A84C" strokeWidth={1.5} className="mt-0.5 flex-shrink-0" />
-                  <span className="text-sm font-light" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>{text}</span>
-                </div>
-              ))}
+              {/* Address – kept as text */}
+              <div className="flex items-start gap-4">
+                <MapPin size={15} color="#C9A84C" strokeWidth={1.5} className="mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-light" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+                  Nairobi, Kenya · Karen · Lavington · Westlands
+                </span>
+              </div>
+
+              {/* Phone – now clickable tel link */}
+              <div className="flex items-start gap-4">
+                <Phone size={15} color="#C9A84C" strokeWidth={1.5} className="mt-0.5 flex-shrink-0" />
+                <a href={`tel:+${number}`} className="text-sm font-light hover:underline" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+                  +{number}
+                </a>
+              </div>
+
+              {/* Email – now clickable mailto link */}
+              <div className="flex items-start gap-4">
+                <Mail size={15} color="#C9A84C" strokeWidth={1.5} className="mt-0.5 flex-shrink-0" />
+                <a href="mailto:charlesupholstery@gmail.com" className="text-sm font-light hover:underline" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+                  charlesupholstery@gmail.com
+                </a>
+              </div>
+
+              {/* Hours – kept as text */}
+              <div className="flex items-start gap-4">
+                <Clock size={15} color="#C9A84C" strokeWidth={1.5} className="mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-light" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+                  Mon – Sat · 8:00 AM – 6:00 PM
+                </span>
+              </div>
             </div>
+
             <a href={waLink} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-3 px-8 py-4 min-h-[44px] text-xs tracking-widest uppercase"
               style={{ background: '#25D366', color: '#fff', fontFamily: "'Jost',sans-serif" }}>

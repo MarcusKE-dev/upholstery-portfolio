@@ -12,22 +12,18 @@ export default function Hero() {
       ))}
 
 <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-12 pt-20 pb-10 lg:pt-32 lg:pb-12">        
-
-        <h1 className="stagger max-w-4xl" style={{ animationDelay: '0.35s' }}>
-          <span className="block leading-none tracking-tight mb-2"
-            style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#2C1810', fontWeight: 300 }}>
-            Bespoke Interior
-          </span>
-          <span className="block leading-none tracking-tight italic"
-            style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 'clamp(3rem,8vw,6rem)', color: '#C9A84C', fontWeight: 300 }}>
-            for the Modern Home.
-          </span>
-        </h1>
+<h1 className="stagger max-w-5xl space-y-2 md:space-y-4" style={{ animationDelay: '0.35s' }}>
+  <span className="block font-serif text-[clamp(2.5rem,7vw,5.5rem)] font-light leading-[1.1] tracking-tight text-[#2C1810]">
+    Bespoke Upholstery & Interior Design
+  </span>
+  <span className="block font-serif text-[clamp(2.5rem,7vw,5.5rem)] font-light leading-none tracking-tight italic text-[#C9A84C]">
+    for the Modern Home.
+  </span>
+</h1>
 
         <p className="stagger mt-8 max-w-md text-base font-light leading-relaxed"
           style={{ animationDelay: '0.5s', color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
-Every commission is treated as a singular work — built by hand,
-finished to museum standard, and made to outlast its generation.
+We transform blank spaces into curated experiences. By pairing structural interior design layouts with our signature handcrafted beds, luxury seating, and custom textiles, we bring flawless elegance to every corner of your home.
 
         </p>
 
@@ -45,7 +41,7 @@ finished to museum standard, and made to outlast its generation.
         </div>
 
         <div className="stagger mt-20 grid grid-cols-3 max-w-sm gap-8" style={{ animationDelay: '0.8s' }}>
-          {[['10+', 'Years of Craft'], ['500+', 'Pieces Restored'], ['100%', 'Handcrafted']].map(([n, l]) => (
+          {[['5+', 'Years of Craft'], ['300+', 'Pieces Restored'], ['100%', 'Handcrafted']].map(([n, l]) => (
             <div key={n}>
               <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.875rem', color: '#2C1810', fontWeight: 300 }}>{n}</div>
               <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase', marginTop: 2 }}>{l}</div>

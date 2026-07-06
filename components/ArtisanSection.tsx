@@ -63,19 +63,33 @@ export default function ArtisanSection() {
           </div>
 
           <div className="order-1 lg:order-2">
-            <h2 className="reveal text-4xl lg:text-5xl font-light leading-tight mb-6"
-              style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
-              Two Decades of{' '}
-              <em className="italic" style={{ color: '#C9A84C' }}>Quiet Excellence</em>
-            </h2>
-            <div className="reveal w-12 h-px mb-8" style={{ background: 'linear-gradient(90deg,#C9A84C,transparent)' }} />
-            <p className="reveal text-base font-light leading-relaxed mb-5" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
-              With over a decade mastering upholstery in Nairobi, every piece is treated as a singular commission. We believe furniture carries memory — our work is to preserve, restore, and elevate that memory.
-            </p>
-            <p className="reveal text-base font-light leading-relaxed mb-10" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
-              Specialising in sofa repair across Nairobi and furniture restoration in Karen. We source only the finest: high-density orthopedic foam, Italian top-grain leather, Turkish velvet, and precision structural webbing.
-            </p>
-            <div className="reveal grid grid-cols-1 sm:grid-cols-3 gap-4">
+  {/* Professional Heading */}
+  <h2 className="reveal font-serif text-4xl font-light leading-tight text-[#2C1810] lg:text-5xl mb-6">
+    A Definition of{' '}
+    <em className="italic text-[#C9A84C]">Design Experience</em>
+  </h2>
+
+  {/* Accent Divider Line */}
+  <div className="reveal h-px w-12 bg-gradient-to-r from-[#C9A84C] to-transparent mb-8" />
+
+  {/* Unified, Premium Copy Body */}
+  <div className="reveal font-sans text-base font-light leading-relaxed text-[#4A2E1E] space-y-5 mb-10">
+    <p>
+      Driven by a passion for curated spaces and meticulous craftsmanship, we have spent the past 
+      five years redefining bespoke upholstery and interior design in Nairobi. Every piece we touch 
+      is treated as a singular commission, a harmonious blend of structural design and textile artistry. 
+      We believe your surroundings carry meaning, and our work is to shape, restore, and elevate that experience.
+    </p>
+    <p>
+      Specializing in full-scale interior transformations and custom upholstery across Nairobi and Karen, 
+      we seamlessly bridge the gap between spatial design and handcrafted furniture. To achieve this, 
+      we source only the finest elements: high-density orthopedic foam, Italian top-grain leather, 
+      Turkish velvet, and precision structural webbing.
+    </p>
+  </div>
+
+  {/* Grid Container Starts Here */}
+  <div className="reveal grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 [Award, 'Master Upholsterer', 'City & Guilds Certified'],
                 [Scissors, 'Structural Specialist', 'Frame & Webbing Repair'],

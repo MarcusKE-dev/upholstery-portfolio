@@ -21,8 +21,8 @@ export default function HomePage() {
       </main>
       <footer className="py-10 border-t" style={{ background: '#2C1810', borderColor: 'rgba(201,168,76,0.2)' }}>
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', color: '#FAF5E9', fontWeight: 300 }}>Charles Upholstery</div>
-          <p className="text-xs" style={{ color: 'rgba(250,245,233,0.35)', fontFamily: "'Jost',sans-serif" }}>© {new Date().getFullYear()} Charles Upholstery · Nairobi, Kenya</p>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.5rem', color: '#FAF5E9', fontWeight: 300 }}>Charles' Interiors</div>
+          <p className="text-xs" style={{ color: 'rgba(250,245,233,0.35)', fontFamily: "'Jost',sans-serif" }}>© {new Date().getFullYear()} Charles' Interiors · Nairobi, Kenya</p>
         </div>
         <p className="sr-only">High-density orthopedic foam, Italian top-grain leather, Turkish velvet, diamond tufting, structural webbing, sofa repair Nairobi, furniture restoration Karen.</p>
       </footer>

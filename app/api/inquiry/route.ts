@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
           <div style="background:#2C1810;padding:20px 40px;text-align:center;">
             <p style="color:rgba(250,245,233,0.35);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;margin:0;">
-              Atelier Charles · Nairobi, Kenya
+              Charles' Interiors · Nairobi, Kenya
             </p>
           </div>
         </div>
