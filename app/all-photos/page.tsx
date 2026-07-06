@@ -1,4 +1,4 @@
-import { getProjects } from '@/lib/supabase'
+import { getProjects, type Project } from '@/lib/supabase'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -9,8 +9,8 @@ export const metadata = {
 }
 
 export default async function AllPhotosPage() {
-  let projects = []
-  let errorMessage = null
+  let projects: Project[] = []  // 👈 explicit type
+  let errorMessage: string | null = null
 
   try {
     projects = await getProjects()
