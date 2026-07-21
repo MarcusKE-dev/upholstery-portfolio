@@ -41,8 +41,8 @@ export default function Contact() {
               {/* Email – now clickable mailto link */}
               <div className="flex items-start gap-4">
                 <Mail size={15} color="#C9A84C" strokeWidth={1.5} className="mt-0.5 flex-shrink-0" />
-                <a href="mailto:charlesupholstery@gmail.com" className="text-sm font-light hover:underline" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
-                  charlesupholstery@gmail.com
+                <a href="mailto:charlieluner@gmail.com" className="text-sm font-light hover:underline" style={{ color: '#4A2E1E', fontFamily: "'Jost',sans-serif" }}>
+                  charlieluner@gmail.com
                 </a>
               </div>
 

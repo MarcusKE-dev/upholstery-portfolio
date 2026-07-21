@@ -279,7 +279,7 @@ export default function Contact() {
               {[
                 [MapPin, 'Nairobi, Kenya · Karen · Lavington · Westlands'],
                 [Phone, `+${number}`],
-                [Mail, 'charlesupholstery@gmail.com'],
+                [Mail, 'charlieluner@gmail.com'],
                 [Clock, 'Mon – Sat · 8:00 AM – 6:00 PM'],
               ].map(([Icon, text]: any) => (
                 <div key={text} className="flex items-start gap-4">
