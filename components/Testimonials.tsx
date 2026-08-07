@@ -9,7 +9,6 @@ export default function Testimonials() {
     <section id="testimonials" className="py-16 lg:py-20" style={{ background: '#FDFAF4' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
         </div>
         <h2 className="text-4xl lg:text-5xl font-light mb-14" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
           Praise from Those <br />

@@ -9,7 +9,7 @@ export default function Contact() {
     <section id="contact" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
+         
         </div>
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           <div>

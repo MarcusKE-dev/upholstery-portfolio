@@ -37,7 +37,6 @@ export default function Gallery() {
     <section id="portfolio" className="py-16 lg:py-20" style={{ background: '#FAF5E9' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
         </div>
 
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8">

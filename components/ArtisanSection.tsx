@@ -29,7 +29,7 @@ export default function ArtisanSection() {
     <section id="about" ref={ref} className="py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="reveal flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
+          
         </div>
 
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">

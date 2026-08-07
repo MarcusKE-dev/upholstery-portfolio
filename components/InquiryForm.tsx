@@ -99,7 +99,7 @@ export default function InquiryForm() {
     <div style={{ border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(253,250,244,0.5)' }}>
       <div className="px-8 pt-8 pb-6" style={{ borderBottom: '1px solid rgba(201,168,76,0.15)' }}>
         <div className="flex items-center gap-3 mb-3">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
+          
 
         </div>
         <h3 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.75rem', color: '#2C1810', fontWeight: 300 }}>

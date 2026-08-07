@@ -57,7 +57,6 @@ export default function ServicesSection() {
         style={{ backgroundImage: 'repeating-linear-gradient(45deg,#C9A84C 0,#C9A84C 1px,transparent 0,transparent 50%)', backgroundSize: '20px 20px' }} />
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
         <div className="reveal flex items-center gap-3 mb-4">
-          <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
         </div>
         <h2 className="reveal text-4xl lg:text-5xl font-light mb-16" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#FAF5E9' }}>
           What We Do
