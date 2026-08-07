@@ -10,7 +10,6 @@ export default function Contact() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
           <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Contact</span>
         </div>
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           <div>

@@ -1,5 +1,5 @@
 const testimonials = [
-  { name: 'Amara Ochieng', location: 'Karen, Nairobi', role: 'Homeowner', review: 'I handed over a Victorian chesterfield falling apart after 30 years. It came back extraordinary — the diamond tufting is immaculate, and the Italian leather they sourced is exactly what I envisioned. True craftsmen.' },
+  { name: 'Amara Ochieng', location: 'Karen, Nairobi', role: 'Homeowner', review: 'I handed over a Victorian chesterfield falling apart after 30 years. It came back extraordinary the diamond tufting is immaculate, and the Italian leather they sourced is exactly what I envisioned. True craftsmen.' },
   { name: 'David Kariuki', location: 'Lavington, Nairobi', role: 'Interior Designer', review: 'I have been referring clients to Atelier for three years. The structural webbing repair on antique dining chairs was done so cleanly my client thought I had bought new ones. Reliable, fast, impeccably finished.' },
   { name: 'The Greenwood Restaurant', location: 'Westlands, Nairobi', role: 'Hospitality Client', review: 'We needed 80 chairs re-upholstered in Turkish velvet before our rebrand. Delivered on time, on brief, within budget. The quality held up perfectly through a full year of heavy commercial use.' },
 ]
@@ -10,7 +10,6 @@ export default function Testimonials() {
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-center gap-3 mb-4">
           <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Client Voices</span>
         </div>
         <h2 className="text-4xl lg:text-5xl font-light mb-14" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#2C1810' }}>
           Praise from Those <br />

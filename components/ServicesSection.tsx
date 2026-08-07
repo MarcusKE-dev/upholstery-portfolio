@@ -58,7 +58,6 @@ export default function ServicesSection() {
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
         <div className="reveal flex items-center gap-3 mb-4">
           <span className="block w-8 h-px" style={{ background: '#C9A84C' }} />
-          <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase' }}>Services</span>
         </div>
         <h2 className="reveal text-4xl lg:text-5xl font-light mb-16" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#FAF5E9' }}>
           What We Do
