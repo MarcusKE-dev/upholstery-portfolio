@@ -1,18 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-    ],
-  },
+  output: 'export',
+  images: { unoptimized: true },
+  // Use the maintained compiler API with pinned TypeScript 5.9. The CLI path
+  // intermittently returned incomplete --showConfig output in this environment.
+  experimental: { useTypeScriptCli: false },
 };
-
 export default nextConfig;

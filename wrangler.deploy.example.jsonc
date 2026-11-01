@@ -1,0 +1,15 @@
+{
+ "$schema":"node_modules/wrangler/config-schema.json",
+ "name":"YOUR-PAGES-PROJECT",
+ "pages_build_output_dir":"./out",
+ "compatibility_date":"2026-10-27",
+ "compatibility_flags":["nodejs_compat"],
+ "vars":{"SITE_URL":"https://YOUR-PAGES-PROJECT.pages.dev","INDEXABLE":"true"},
+ "d1_databases":[{"binding":"DB","database_name":"YOUR-PRODUCTION-DB","database_id":"YOUR-PRODUCTION-D1-ID","migrations_dir":"migrations"}],
+ "r2_buckets":[{"binding":"MEDIA","bucket_name":"YOUR-PRODUCTION-R2-BUCKET"}],
+ "env":{"preview":{
+  "vars":{"SITE_URL":"https://staging.YOUR-PAGES-PROJECT.pages.dev","INDEXABLE":"false"},
+  "d1_databases":[{"binding":"DB","database_name":"YOUR-PREVIEW-DB","database_id":"YOUR-PREVIEW-D1-ID","migrations_dir":"migrations"}],
+  "r2_buckets":[{"binding":"MEDIA","bucket_name":"YOUR-PREVIEW-R2-BUCKET"}]
+ }}
+}

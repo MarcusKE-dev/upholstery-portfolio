@@ -7,37 +7,37 @@ const services = [
     Icon: Layers,
     title: 'Bespoke Re-Upholstery',
     subtext: 'SOFA RETAILORING · LOOSE SLIPCOVERS',
-    desc: 'Complete stripping and premium rebuilding from the frame up. Specialized tailoring for luxury sectional sofas, antique wingbacks, and custom slipcovers.',
+    desc: 'Sofa and chair upholstery, loose covers and seating restoration. Discuss the covering and any underlying repairs your furniture may need.',
   },
   {
     Icon: PenTool,
     title: 'Chesterfield & Bedroom Craft',
     subtext: 'DIAMOND TUFTING · CUSTOM HEADBOARDS',
-    desc: 'Master-tier deep diamond tufting executed by hand. Designing custom upholstered chester beds, statement headboards, and designer scatter cushions.',
+    desc: 'Upholstered beds, headboards and scatter cushions. Discuss dimensions, padding and the tufted or plain finish you prefer.',
   },
   {
     Icon: Zap,
     title: 'Structural & Foam Revival',
-    subtext: 'ORTHOPEDIC FOAM · FRAME REBUILDING',
-    desc: 'Restoring broken internal wood frames and collapsed structural webbing to better-than-original standards using high-density 15+ year orthopedic foam.',
+    subtext: 'PADDING · SEAT SUPPORT',
+    desc: 'Discuss sagging cushions, frame concerns and seat support. An assessment helps distinguish filling problems from structural repairs.',
   },
   {
     Icon: Package,
     title: 'Window Drapery & Couture',
     subtext: 'ARTISANAL CURTAINS · ROLLER BLINDS',
-    desc: 'Precision-pleated luxury drapery, ethereal linen sheers, and minimalist automated roller blinds tailored perfectly to your architectural dimensions.',
+    desc: 'Curtains, sheers and blinds selected around light, privacy and room proportions. Confirm material, measurement and fitting arrangements for your enquiry.',
   },
   {
     Icon: CheckCircle,
     title: 'Tailored Dining & Accents',
     subtext: 'DINING SUITES · PLUSH MOCKETS',
-    desc: 'Immaculate pattern matching across luxury dining chair sets, custom accent ottomans, mockets, and bespoke tailored footstools.',
+    desc: 'Dining chair upholstery, ottomans and footstools. Coordinate coverings with the seating and textiles already in your room.',
   },
   {
     Icon: Truck,
-    title: 'Executive Auto & Commercial',
-    subtext: 'HOSPITALITY SEATING · CAR SEAT COVERS',
-    desc: 'Commercial-grade textiles for high-traffic restaurant and corporate spaces, combined with precision-fitted protective covers for automotive seating.',
+    title: 'Automotive seating',
+    subtext: 'CAR SEAT COVERS',
+    desc: 'For car seat covers, share the vehicle and seat details. Confirm the scope for your particular seating enquiry.',
   },
 ]
 
@@ -68,7 +68,7 @@ export default function ServicesSection() {
               <Icon size={20} strokeWidth={1.5} color="#C9A84C" className="mb-5" />
               <h3 className="text-xl font-light mb-3" style={{ fontFamily: "'Cormorant Garamond',serif", color: '#FAF5E9' }}>{title}</h3>
               <p className="text-sm font-light leading-relaxed mb-5" style={{ fontFamily: "'Jost',sans-serif", color: 'rgba(250,245,233,0.62)' }}>{desc}</p>
-              <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase' }}>{subtext}</span>
+              <span style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.75rem', letterSpacing: '0.2em', color: '#C9A84C', textTransform: 'uppercase' }}>{subtext}</span>
             </div>
           ))}
         </div>

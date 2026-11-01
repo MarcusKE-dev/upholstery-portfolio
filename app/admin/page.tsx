@@ -1,114 +1,83 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { getProjects, type Project } from '@/lib/supabase'
-import AdminForm from '@/components/AdminForm'
-import AdminTable from '@/components/AdminTable'
-import AdminArtisanPhoto from '@/components/AdminArtisanPhoto'
-import AdminEditModal from '@/components/AdminEditModal'
-import { LogOut, LayoutDashboard, Loader2 } from 'lucide-react'
-
-export default function AdminPage() {
-  const [authed, setAuthed] = useState(false)
-  const [password, setPassword] = useState('')
-  const [authError, setAuthError] = useState('')
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | null>(null)
-
-  useEffect(() => {
-    if (sessionStorage.getItem('atelier_admin') === 'true') setAuthed(true)
-  }, [])
-
-  useEffect(() => {
-    if (!authed) return
-    setLoading(true)
-    getProjects().then(setProjects).catch(console.error).finally(() => setLoading(false))
-  }, [authed])
-
-  const handleLogin = () => {
-    if (password === (process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123')) {
-      sessionStorage.setItem('atelier_admin', 'true')
-      setAuthed(true); setAuthError('')
-    } else {
-      setAuthError('Incorrect password.')
-    }
+import {useEffect,useRef,useState} from 'react'
+import {startRegistration,startAuthentication} from '@simplewebauthn/browser'
+import imageCompression from 'browser-image-compression'
+import './admin.css'
+type RecordData=Record<string,any>
+type FileTask={id:string;file:File;progress:number;state:'waiting'|'uploading'|'done'|'error';error?:string;url?:string;uploadId?:string;completedParts?:number[]}
+const sections=[['dashboard','Dashboard'],['project','Projects & galleries'],['post','Blog'],['faq','FAQs'],['service','Services'],['category','Categories'],['page','Pages & SEO'],['guide','Guides'],['settings','Business settings'],['media','Media library'],['security','Account & recovery']]
+const titles:Record<string,string>={project:'Project',post:'Post',faq:'Question',service:'Service',category:'Category',page:'Page',guide:'Guide',settings:'Business settings'}
+async function api(path:string,options:RequestInit={}){const r=await fetch(path,{...options,headers:{'Content-Type':'application/json',...options.headers}});const d=await r.json();if(!r.ok)throw Object.assign(Error(d.error||'Request failed. Please try again.'),{status:r.status});return d}
+const slugify=(v:string)=>v.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,120)
+const publicPath=(d:RecordData)=>d.kind==='page'?(d.slug==='home'?'/':'/'+d.slug):({project:'/projects/',post:'/blog/',guide:'/guides/',service:'/services/',category:'/portfolio/'} as Record<string,string>)[d.kind]+d.slug
+export default function Admin(){
+ const [authenticated,setAuthenticated]=useState(false),[checked,setChecked]=useState(false),[register,setRegister]=useState(false),[token,setToken]=useState('')
+ const [section,setSection]=useState('dashboard'),[records,setRecords]=useState<RecordData[]>([]),[media,setMedia]=useState<RecordData[]>([]),[edit,setEdit]=useState<RecordData|null>(null),[saved,setSaved]=useState(''),[query,setQuery]=useState(''),[filter,setFilter]=useState('all')
+ const [loadingContent,setLoadingContent]=useState(true)
+ const [message,setMessage]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[tasks,setTasks]=useState<FileTask[]>([]),[libraryChoice,setLibraryChoice]=useState('')
+ const editor=useRef<HTMLTextAreaElement>(null),editRef=useRef<RecordData|null>(null),fileRef=useRef<HTMLInputElement>(null)
+ editRef.current=edit
+ const uploading=tasks.some(t=>['waiting','uploading'].includes(t.state))
+ const dirty=!!edit&&JSON.stringify(edit)!==saved
+ useEffect(()=>{fetch('/api/admin/auth').then(r=>setAuthenticated(r.ok)).catch(()=>setError('Unable to check the session. Check your connection and try signing in.')).finally(()=>setChecked(true))},[])
+ async function refresh(){setLoadingContent(true);try{const [c,m]=await Promise.all([api('/api/admin/content'),api('/api/admin/media')]);setRecords(c.records);setMedia(m.media)}finally{setLoadingContent(false)}}
+ useEffect(()=>{if(authenticated)refresh().catch(e=>setError(e.message))},[authenticated])
+ useEffect(()=>{const f=(e:BeforeUnloadEvent)=>{if(dirty||tasks.some(t=>['waiting','uploading'].includes(t.state))){e.preventDefault();e.returnValue=''}};window.addEventListener('beforeunload',f);return()=>window.removeEventListener('beforeunload',f)},[dirty,tasks])
+ function change(k:string,v:any){setEdit(old=>old?{...old,[k]:v}:old)}
+ function open(d:RecordData){if(busy){setMessage('Please wait for the current save or delete to finish.');return}if(uploading){setError('Wait for the current uploads to finish before changing editors.');return}if(dirty&&!confirm('Discard unsaved changes?'))return;setEdit(structuredClone(d));setSaved(JSON.stringify(d));setError('');setMessage('')}
+ function navigate(s:string){if(busy){setMessage('Please wait for the current save or delete to finish.');return}if(uploading){setError('Wait for the current uploads to finish before leaving this section.');return}if(dirty&&!confirm('Discard unsaved changes?'))return;setEdit(null);setSection(s);setQuery('');setError('');setMessage('')}
+ async function signIn(backup=false){setBusy(true);setError('');try{const options=await api('/api/admin/auth/options',{method:'POST',body:JSON.stringify({register,setupToken:token,backup})});const response=register||backup?await startRegistration({optionsJSON:options}):await startAuthentication({optionsJSON:options});await api('/api/admin/auth/verify',{method:'POST',body:JSON.stringify({response})});setAuthenticated(true);setToken('');setRegister(false);setMessage(backup?'Backup passkey registered.':'Signed in.')}catch(e:any){setError(e.message)}finally{setBusy(false)}}
+ function create(){open({id:crypto.randomUUID(),kind:section,title:'',slug:'',description:'',body:'',category:'',subcategory:'',cover:'',media:[],published:0,position:0,featured:false,enabled:true,publicationDate:new Date().toISOString().slice(0,10)})}
+ async function save(published?:number){if(!edit||busy)return;if(uploading){setError('Wait for uploads to finish, then complete the metadata and save.');return}setBusy(true);setError('');setMessage('');try{const {record}=await api('/api/admin/content',{method:'POST',body:JSON.stringify({record:{...edit,published:published??edit.published}})});setEdit(record);setSaved(JSON.stringify(record));await refresh();setMessage(record.published?'Published changes saved.':'Draft saved.');return record}catch(e:any){setError(e.message)}finally{setBusy(false)}}
+ async function remove(d:RecordData){if(busy)return;if(!confirm(`Delete “${d.title}”? This removes its page. Original media will be kept. ${d.kind==='category'?'Projects will keep their content and lose this category assignment.':''}`))return;setBusy(true);try{await api('/api/admin/content',{method:'POST',body:JSON.stringify({action:'delete',id:d.id})});setEdit(null);await refresh();setMessage('Deleted. Original media retained.')}catch(e:any){setError(e.message)}finally{setBusy(false)}}
+ function updateTask(id:string,changes:Partial<FileTask>){setTasks(old=>old.map(t=>t.id===id?{...t,...changes}:t))}
+ const xhr=(url:string,data:Blob,onprogress:(value:number)=>void)=>new Promise<any>((resolve,reject)=>{const request=new XMLHttpRequest();request.open('POST',url);if(data instanceof File)request.setRequestHeader('X-File-Name',encodeURIComponent(data.name));request.upload.onprogress=e=>{if(e.lengthComputable)onprogress(e.loaded/e.total)};request.onload=()=>{let result;try{result=JSON.parse(request.responseText)}catch{reject(Error('Upload response unavailable. Retry this file.'));return}if(request.status>=200&&request.status<300)resolve(result);else reject(Error(result.error||'Upload failed.'))};request.onerror=()=>reject(Error('Connection lost. Retry this file.'));request.send(data)})
+ async function runTask(t:FileTask){updateTask(t.id,{state:'uploading',error:undefined});try{
+  let result:any
+  if(t.file.type.startsWith('image/')){
+   const bitmap=await createImageBitmap(t.file);const pixels=bitmap.width*bitmap.height;bitmap.close();if(pixels>40000000)throw Error('Image exceeds 40 megapixels. Resize it before uploading.');
+   const optimized=await imageCompression(t.file,{maxSizeMB:3,maxWidthOrHeight:3200,useWebWorker:false,initialQuality:.9,preserveExif:false})
+   result=await xhr('/api/admin/upload',optimized,p=>updateTask(t.id,{progress:Math.round(p*100)}))
+  }else{
+   let id=t.uploadId,partSize=8*1024*1024
+   if(id){try{result=await api(`/api/admin/video/complete?id=${id}`,{method:'POST',body:'{}'})}catch(e:any){if(![400,404].includes(e.status))throw e;if(e.status===404){id=undefined;t.uploadId=undefined;t.completedParts=[];updateTask(t.id,{uploadId:undefined,completedParts:[],progress:0})}}}
+   if(!result){if(!id){const init=await api('/api/admin/video/start',{method:'POST',body:JSON.stringify({type:t.file.type,size:t.file.size,name:t.file.name})});id=init.id;partSize=init.partSize;t.uploadId=id;updateTask(t.id,{uploadId:id})}
+   const completed=new Set(t.completedParts||[])
+   for(let start=0,part=1;start<t.file.size;start+=partSize,part++){if(completed.has(part))continue;
+    const chunk=t.file.slice(start,start+partSize);await xhr(`/api/admin/video/part?id=${id}&part=${part}`,chunk,p=>updateTask(t.id,{progress:Math.round((start+chunk.size*p)/t.file.size*99)}));completed.add(part);t.completedParts=[...completed];updateTask(t.id,{completedParts:t.completedParts})
+   }
+   result=await api(`/api/admin/video/complete?id=${id}`,{method:'POST',body:'{}'})}
   }
-
-  if (!authed) return (
-    <div className="min-h-screen flex items-center justify-center px-6"
-      style={{ background: 'radial-gradient(ellipse at center,#F0E6D3 0%,#FDFAF4 100%)' }}>
-      <div className="w-full max-w-sm p-10 border" style={{ borderColor: 'rgba(201,168,76,0.3)', background: '#fff' }}>
-        <div className="text-center mb-10">
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>Atelier</div>
-          <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.35em', color: '#C9A84C', textTransform: 'uppercase', marginTop: 4 }}>Admin Dashboard</div>
-        </div>
-        <label style={{ display: 'block', fontSize: '0.6rem', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#8B6F5E', fontFamily: "'Jost',sans-serif", marginBottom: 6 }}>Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleLogin()}
-          placeholder="Enter admin password" className="w-full px-4 py-3 outline-none mb-4"
-          style={{ background: '#FAF5E9', border: '1px solid rgba(44,24,16,0.15)', color: '#2C1810', fontFamily: "'Jost',sans-serif" }} />
-        {authError && <p className="text-xs mb-4" style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>{authError}</p>}
-        <button onClick={handleLogin} className="w-full py-3.5 text-xs tracking-widest uppercase hover:bg-[#4A2E1E] transition-colors"
-          style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>Sign In</button>
-        <div className="mt-6 text-center">
-          <a href="/" style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase' }}>← Back to Portfolio</a>
-        </div>
-      </div>
-    </div>
-  )
-
-  return (
-    <div className="min-h-screen" style={{ background: '#FDFAF4' }}>
-      <header className="sticky top-0 z-10 h-16 flex items-center justify-between px-6 lg:px-12 border-b"
-        style={{ background: '#fff', borderColor: 'rgba(201,168,76,0.2)' }}>
-        <div className="flex items-center gap-3">
-          <LayoutDashboard size={17} color="#C9A84C" strokeWidth={1.5} />
-          <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.1rem', color: '#2C1810', fontWeight: 300 }}>Admin Dashboard</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <a href="/" target="_blank" className="hidden md:block text-xs tracking-widest uppercase" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>View Site ↗</a>
-          <button onClick={() => { sessionStorage.removeItem('atelier_admin'); setAuthed(false) }}
-            className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>
-            <LogOut size={13} strokeWidth={1.5} />Logout
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-6 lg:px-12 py-12 space-y-10">
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            ['Total', projects.length],
-            ['Residential', projects.filter(p => p.category === 'residential').length],
-            ['Window', projects.filter(p => p.category === 'window').length],
-            ['Bedroom', projects.filter(p => p.category === 'bedroom').length],
-          ].map(([l, v]) => (
-            <div key={l} className="p-5 border text-center" style={{ borderColor: 'rgba(201,168,76,0.2)', background: '#fff' }}>
-              <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '2rem', color: '#2C1810', fontWeight: 300 }}>{v}</div>
-              <div style={{ fontFamily: "'Jost',sans-serif", fontSize: '0.6rem', letterSpacing: '0.2em', color: '#8B6F5E', textTransform: 'uppercase', marginTop: 4 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-
-        <AdminArtisanPhoto />
-        <AdminForm onProjectAdded={p => setProjects(prev => [p, ...prev])} />
-
-        {loading
-          ? <div className="flex justify-center py-16"><Loader2 size={22} className="animate-spin" color="#C9A84C" /></div>
-          : <AdminTable projects={projects} onDeleted={id => setProjects(prev => prev.filter(p => p.id !== id))} onEdit={setEditingProject} />
-        }
-      </main>
-
-      {editingProject && (
-        <AdminEditModal
-          project={editingProject}
-          onUpdate={(updated) => {
-            setProjects(prev => prev.map(p => p.id === updated.id ? updated : p))
-            setEditingProject(null)
-          }}
-          onClose={() => setEditingProject(null)}
-        />
-      )}
-    </div>
-  )
+  updateTask(t.id,{state:'done',progress:100,url:result.url})
+  setEdit(old=>old&&['project','post','service','guide'].includes(old.kind)?{...old,media:[...(old.media||[]),{url:result.url,alt:'',caption:'',title:t.file.name.replace(/\.[^.]+$/,''),poster:'',before:'',position:old.media?.length||0}],cover:old.cover||(t.file.type.startsWith('image/')?result.url:'')}:old)
+  try{const m=await api('/api/admin/media');setMedia(m.media)}catch(e:any){setError('Upload completed, but the media list could not refresh. '+e.message)}
+ }catch(e:any){updateTask(t.id,{state:'error',error:e.message})}}
+ async function selectFiles(files:FileList|null){if(!files)return;const chosen=Array.from(files);if(chosen.length>30){setError('Select up to 30 files at a time.');return}const added:FileTask[]=chosen.map(file=>({id:crypto.randomUUID(),file,progress:0,state:'waiting'}));setTasks(old=>[...old,...added]);for(const t of added){if(!['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(t.file.type)||t.file.size>(t.file.type.startsWith('image/')?12*1024*1024:2*1024*1024*1024)){updateTask(t.id,{state:'error',error:'Use JPEG, PNG, WebP up to 12 MiB or MP4/WebM up to 2 GiB.'});continue}await runTask(t)}}
+ async function removeTask(t:FileTask){if(t.state==='uploading'||t.state==='waiting')return;if(t.uploadId&&t.state==='error')try{await api('/api/admin/video/abort?id='+t.uploadId,{method:'POST',body:'{}'})}catch(e:any){if(e.status!==404){setError(e.message);return}}setTasks(old=>old.filter(i=>i.id!==t.id))}
+ const images=media.filter(m=>m.content_type.startsWith('image/'))
+ function field(label:string,key:string,options:{area?:boolean;type?:string;help?:string;required?:boolean}={}){return <label key={key}>{label}{options.area?<textarea rows={key==='body'?16:3} ref={key==='body'?editor:undefined} value={edit?.[key]||''} onChange={e=>change(key,e.target.value)}/>:<input type={options.type||'text'} required={options.required} value={edit?.[key]??''} onChange={e=>change(key,options.type==='number'?Number(e.target.value):e.target.value)}/>} {options.help&&<small>{options.help}</small>}</label>}
+ function selectImage(label:string,key:string,value?:string,onChange?:(value:string)=>void){return <label>{label}<select value={value??edit?.[key]??''} onChange={e=>onChange?onChange(e.target.value):change(key,e.target.value)}><option value="">No image</option>{images.map(m=><option key={m.object_key} value={'/media/'+m.object_key}>{m.filename||m.object_key.split('/').pop()} · {Math.round(m.size/1024)} KiB</option>)}</select>{(value??edit?.[key])&&<img className="image-preview" src={value??edit?.[key]} alt="Selected image"/>}</label>}
+ function insert(before:string,after=''){const el=editor.current;if(!el||!edit)return;const start=el.selectionStart,end=el.selectionEnd;change('body',(edit.body||'').slice(0,start)+before+el.value.slice(start,end)+after+(edit.body||'').slice(end));requestAnimationFrame(()=>{el.focus();el.setSelectionRange(start+before.length,end+before.length)})}
+ const uploadUI=<section className="admin-box"><h2>Upload photos & videos</h2><p>Up to 30 files per selection. Photos: JPEG, PNG or WebP, 12 MiB and 40 megapixels maximum; optimized to 3200px / about 3 MiB before upload. Videos: MP4 (H.264/AAC) or WebM (VP8/VP9), up to 2 GiB, sent in 8 MiB chunks. Videos are not converted. Add a poster for each video.</p><label className="file-label">Choose media<input ref={fileRef} type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" disabled={tasks.some(t=>['waiting','uploading'].includes(t.state))} onChange={e=>{selectFiles(e.target.files);e.target.value=''}}/></label><p>Uploads remain private until referenced by published content. Complete alt text, captions and ordering below before publishing. Video retries retain completed data while this editor stays open; sign in again if your session expires. Originals are kept when removed from a gallery.</p><div aria-live="polite">{tasks.map(t=><div className="upload-row" key={t.id}><strong>{t.file.name}</strong><progress max="100" value={t.progress}/><span>{t.state==='done'?'Uploaded':t.state==='error'?t.error:t.state==='waiting'?'Waiting':`${t.progress}%`}</span>{t.state==='error'&&<>{/sign in again|session expired/i.test(t.error||'')&&<button type="button" onClick={()=>setAuthenticated(false)}>Sign in again</button>}<button type="button" onClick={()=>runTask(t)}>Retry</button></>}{!['uploading','waiting'].includes(t.state)&&<button type="button" onClick={()=>removeTask(t)}>Remove from queue</button>}</div>)}</div></section>
+ if(!checked)return <main className="admin-login" id="main-content"><h1>Owner studio</h1><p role="status">Checking your session…</p></main>
+ if(!authenticated)return <main className="admin-login" id="main-content"><a href="/">← Return to website</a><span className="admin-eyebrow">Charles’ Interiors</span><h1>Owner studio</h1><p>Manage your work, stories and business details.</p><form onSubmit={e=>{e.preventDefault();signIn()}}>{register&&<label>Private setup token<input type="password" value={token} onChange={e=>setToken(e.target.value)} autoComplete="off" required/><small>Provided privately by the account owner. Enrollment closes after the first passkey.</small></label>}<button disabled={busy} type="submit">{busy?'Waiting for your passkey…':register?'Enroll owner passkey':'Sign in with passkey'}</button></form><button className="secondary" onClick={()=>{setRegister(!register);setError('')}}>{register?'Back to sign in':'First-time owner setup'}</button>{error&&<p role="alert" className="error">{error}</p>}<p>Use a passkey on this exact website address. A registered backup key or the private account recovery procedure can restore access.</p></main>
+ return <div className="admin-app"><header className="admin-top"><a href="/admin">Charles’ Interiors <span>Owner studio</span></a><div><a href="/" target="_blank" rel="noreferrer">View website ↗</a><button onClick={async()=>{if(busy){setMessage('Please wait for the current save or delete to finish.');return}if(uploading){setError('Wait for uploads to finish before signing out.');return}if(dirty&&!confirm('Discard unsaved edits and sign out?'))return;try{await api('/api/admin/auth',{method:'DELETE'});setAuthenticated(false)}catch(e:any){setError(e.message)}}}>Sign out</button></div></header><div className="admin-layout"><nav aria-label="Admin sections" className="admin-nav">{sections.map(([s,title])=><button key={s} aria-current={section===s?'page':undefined} onClick={()=>navigate(s)}>{title}</button>)}</nav><main className="admin-main" id="main-content"><div className="admin-heading"><div><span className="admin-eyebrow">Your website</span><h1>{edit?`${titles[edit.kind]} editor`:sections.find(([s])=>s===section)?.[1]}</h1></div>{edit&&<button onClick={()=>navigate(section)}>Back to list</button>}</div>{error&&<div role="alert" className="error">{error} <button onClick={()=>setAuthenticated(false)}>Sign in again</button></div>}{message&&<p className="success" role="status">{message}</p>}
+ {loadingContent&&records.length===0?<p role="status">Loading your content…</p>:edit?<form onSubmit={e=>{e.preventDefault();save()}}>
+ <div className="savebar"><span>{dirty?'Unsaved changes':edit.published?'Published':'Draft'}</span><button disabled={busy} type="submit">{busy?'Saving…':'Save'}</button>{edit.kind!=='settings'&&<button disabled={busy} type="button" onClick={()=>save(edit.published?0:1)}>{edit.published?'Unpublish':'Publish'}</button>}{['project','post','guide','service','page','category'].includes(edit.kind)&&<button type="button" disabled={busy} onClick={async()=>{const previewWindow=window.open('about:blank','_blank');if(previewWindow)previewWindow.opener=null;const d=await save();if(d){if(previewWindow)previewWindow.location.href='/preview/'+d.id;else window.location.assign('/preview/'+d.id)}else previewWindow?.close()}}>Save & preview</button>}</div>
+ <fieldset disabled={busy} className="admin-edit-fields"><section className="admin-box"><h2>Content</h2>{field(edit.kind==='faq'?'Question':'Title','title',{required:true})}{!['settings','page'].includes(edit.kind)&&field('URL slug','slug',{required:true,help:'Lowercase words separated by hyphens. Old published addresses redirect after a rename.'})}{field('Display order','position',{type:'number',help:'Lower numbers appear first.'})}{!['settings','faq'].includes(edit.kind)&&field('Introduction / excerpt','description',{area:true})}
+ {edit.kind==='settings'?<>{field('Business name','name')}{field('Public email','email',{type:'email'})}{field('Phone','phone')}{field('WhatsApp number','whatsapp',{help:'International digits only, e.g. 254…; leave blank to hide.'})}{field('Address (only if publicly offered)','address')}{field('Opening hours','hours',{area:true})}{field('Instagram URL','instagram')}{field('Facebook URL','facebook')}{field('Footer text','footer',{area:true})}<h3>Shared call to action</h3>{field('CTA eyebrow','ctaEyebrow')}{field('CTA heading','ctaHeading')}{field('CTA introduction','ctaText',{area:true})}{field('CTA button label','ctaLabel')}{field('CTA button path','ctaUrl',{help:'Local path such as /contact.'})}<label className="checkbox"><input type="checkbox" checked={edit.ctaEnabled!==false} onChange={e=>change('ctaEnabled',e.target.checked)}/>Show shared call to action</label>{selectImage('Logo','logo')}{selectImage('Artisan / profile photo','profile')}{field('Profile photo alt text','profileAlt')}</>:null}
+ {['project','post','service','guide'].includes(edit.kind)&&<><label>Category<select value={edit.category||''} onChange={e=>change('category',e.target.value)}><option value="">Uncategorized</option>{records.filter(d=>d.kind==='category').map(d=><option key={d.id} value={d.id}>{d.title}{!d.published?' (unpublished)':''}</option>)}</select></label>{field('Subcategory','subcategory')}{selectImage('Cover image','cover')}{edit.cover&&<>{field('Cover alt text','coverAlt')}{field('Cover caption','coverCaption',{area:true})}</>}</>}
+ {['post','guide'].includes(edit.kind)&&field('Publication date','publicationDate',{type:'date'})}
+ {edit.kind!=='settings'&&<><div className="editor-toolbar" aria-label="Text formatting">{[['Heading','\n## ',''],['Subheading','\n### ',''],['Bold','**','**'],['Italic','*','*'],['Bullet list','\n- ',''],['Numbered list','\n1. ','']].map(([label,b,a])=><button key={label} type="button" onClick={()=>insert(b,a)}>{label}</button>)}<button type="button" onClick={()=>{const url=prompt('Link address (https://… or /page)');if(url)insert('[',`](${url})`)}}>Link</button><button type="button" onClick={()=>{if(!libraryChoice){setError('Select an inline image below first.');return}const alt=prompt('Describe the image for its alt text')||'';insert(`\n![${alt.replace(/[\[\]]/g,'')}](${libraryChoice})\n`)}}>Inline image</button></div>{field(edit.kind==='faq'?'Answer':'Formatted body','body',{area:true,help:'Use the toolbar or Markdown: headings, bold, links and lists. Raw HTML is displayed as text. Save & preview to see formatting.'})}<label>Image for inline insertion<select value={libraryChoice} onChange={e=>setLibraryChoice(e.target.value)}><option value="">Choose image</option>{images.map(m=><option key={m.object_key} value={'/media/'+m.object_key}>{m.filename||m.object_key}</option>)}</select></label></>}
+ {edit.kind==='category'&&<>{selectImage('Category image','cover')}{edit.cover&&<>{field('Cover alt text','coverAlt')}{field('Cover caption','coverCaption',{area:true})}</>}</>}
+ {edit.kind==='faq'&&field('Show on page','placement',{help:'Use a page path such as /, /services, /contact, or all. Every published FAQ also appears on /faqs.'})}
+ {edit.kind==='project'&&<label className="checkbox"><input type="checkbox" checked={edit.featured||false} onChange={e=>change('featured',e.target.checked)}/>Feature on homepage</label>}
+ {edit.kind==='page'&&edit.slug==='home'&&<>{field('Call to action label','ctaLabel')}{field('Call to action path','ctaUrl',{help:'A local path such as /contact or /portfolio.'})}{edit.slug==='home'&&<>{field('Featured work section eyebrow','featuredEyebrow')}{field('Featured work section heading','featuredHeading')}<label className="checkbox"><input type="checkbox" checked={edit.enabled!==false} onChange={e=>change('enabled',e.target.checked)}/>Show selected projects section</label>{field('Services section eyebrow','servicesEyebrow')}{field('Services section heading','servicesHeading')}<label className="checkbox"><input type="checkbox" checked={edit.servicesEnabled!==false} onChange={e=>change('servicesEnabled',e.target.checked)}/>Show homepage services section</label></>}</>}
+ </section>
+ {['project','post','guide','service'].includes(edit.kind)&&<section className="admin-box"><h2>Gallery metadata</h2><p>Each entry has independent text and order. Video entries can have a poster; photo entries can have a before image.</p>{(edit.media||[]).map((m:any,i:number)=>{const update=(key:string,value:any)=>change('media',edit.media.map((a:any,j:number)=>j===i?{...a,[key]:value}:a));return <fieldset key={i} className="media-entry"><legend>Media {i+1}</legend>{/\.(mp4|webm)$/.test(m.url)?<video controls preload="none" src={m.url} poster={m.poster||undefined}/>:<img src={m.url} alt={m.alt||'Photo awaiting alt text'}/>}<label>Title<input value={m.title||''} onChange={e=>update('title',e.target.value)}/></label><label>Alt text (photos)<input value={m.alt||''} onChange={e=>update('alt',e.target.value)}/></label><label>Caption / description<textarea value={m.caption||''} onChange={e=>update('caption',e.target.value)}/></label><label>Display order<input type="number" value={m.position||0} onChange={e=>update('position',Number(e.target.value))}/></label>{/\.(mp4|webm)$/.test(m.url)?selectImage('Video poster','',m.poster||'',value=>update('poster',value)):selectImage('Before image (optional)','',m.before||'',value=>update('before',value))}{m.before&&<><label>Before image alt text<input value={m.beforeAlt||''} onChange={e=>update('beforeAlt',e.target.value)}/></label><label>Before image caption<textarea value={m.beforeCaption||''} onChange={e=>update('beforeCaption',e.target.value)}/></label></>}<button type="button" onClick={()=>change('cover',m.url)} disabled={/\.(mp4|webm)$/.test(m.url)}>Use as cover</button><button type="button" className="danger" onClick={()=>{if(confirm('Remove this gallery reference? The original is kept.'))change('media',edit.media.filter((_:any,j:number)=>i!==j))}}>Remove entry</button></fieldset>})}<label>Add existing media<select value="" onChange={e=>{if(e.target.value)change('media',[...(edit.media||[]),{url:e.target.value,alt:'',caption:'',title:'',poster:'',before:'',position:edit.media?.length||0}])}}><option value="">Choose a file</option>{media.map(m=><option key={m.object_key} value={'/media/'+m.object_key}>{m.filename||m.object_key}</option>)}</select></label></section>}
+ {uploadUI}
+ {!['faq','settings'].includes(edit.kind)&&<section className="admin-box"><h2>Search & sharing</h2>{field('SEO title (optional)','seoTitle')}{field('SEO description (optional)','seoDescription',{area:true})}{selectImage('Social sharing image','socialImage')}</section>}
+ {!['settings','page'].includes(edit.kind)&&<button type="button" className="danger" disabled={busy} onClick={()=>remove(edit)}>Delete {titles[edit.kind].toLowerCase()}</button>}
+ </fieldset></form>:section==='dashboard'?<><section className="admin-box"><h2>Make this space yours</h2><p>Start with your business details, review page copy, then upload your first project. New items start as drafts.</p><div className="dashboard-grid">{sections.filter(([s])=>!['dashboard','security'].includes(s)).map(([s,title])=><button key={s} onClick={()=>navigate(s)}><strong>{title}</strong><span>{s==='media'?media.length:records.filter(d=>d.kind===s).length} items · Open →</span></button>)}</div></section><p>Your session expires after one hour. Save regularly. Publishing updates the public pages and sitemap immediately.</p></>:section==='security'?<section className="admin-box"><h2>Protect access</h2><p>Add a backup passkey on another device or security key. All keys belong to the same administrator.</p><button disabled={busy} onClick={()=>signIn(true)}>Register backup passkey</button><p>Signing out revokes all sessions. Passkeys are tied to this exact hostname.</p><h2>Recovery & backups</h2><p>If all passkeys are lost, use your Cloudflare account to run the private recovery command in README.md and set a new setup token. There is no public recovery bypass. Back up D1 and R2 before recovery or major content changes.</p><h2>Review incomplete video uploads</h2><p>Failed uploads in the queue can be retried or removed here. Removing a failed video aborts its multipart upload. R2 lifecycle rules should abort abandoned multipart uploads after one day.</p>{uploadUI}</section>:section==='media'?<>{uploadUI}<section className="admin-box"><h2>Uploaded originals</h2><p>Files shared by any content, including drafts, cannot be deleted. Check each file before deleting; deletion is permanent.</p><label>Search media<input value={query} onChange={e=>setQuery(e.target.value)}/></label><div className="media-library">{media.filter(m=>(m.filename+' '+m.object_key).toLowerCase().includes(query.toLowerCase())).map(m=><div key={m.object_key}>{m.content_type.startsWith('image/')?<img src={'/media/'+m.object_key} alt="Uploaded original" loading="lazy"/>:<video src={'/media/'+m.object_key} controls preload="none"/>}<strong>{m.filename||'Uploaded media'}</strong><small>{m.object_key}</small><span>{Math.round(m.size/1024)} KiB · {m.references_count} references</span><button className="danger" disabled={!!m.references_count} onClick={async()=>{if(!confirm('Permanently delete this unreferenced original from R2?'))return;try{await api('/api/admin/media',{method:'POST',body:JSON.stringify({action:'delete',key:m.object_key})});await refresh()}catch(e:any){setError(e.message)}}}>Delete original</button></div>)}</div>{!media.length&&<p>No uploads yet. Your originals will appear here.</p>}</section></>:<section className="admin-box"><div className="admin-heading"><h2>{sections.find(([s])=>s===section)?.[1]}</h2>{!['settings','page'].includes(section)&&<button onClick={create}>Create {titles[section]?.toLowerCase()}</button>}</div><div className="list-filters"><label>Search<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search titles and text"/></label><label>Status<select value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All</option><option value="published">Published</option><option value="draft">Draft</option></select></label></div><div className="content-list">{records.filter(d=>d.kind===section&&(filter==='all'||!!d.published===(filter==='published'))&&(d.title+' '+d.description).toLowerCase().includes(query.toLowerCase())).map(d=><div key={d.id}><div><strong>{d.title}</strong><span>{d.published?'Published':'Draft'} · order {d.position}</span><small>{['settings','faq'].includes(d.kind)?d.slug:publicPath(d)}</small></div><button onClick={()=>open(d)}>Edit</button>{!['settings','page'].includes(d.kind)&&<button className="danger" onClick={()=>remove(d)}>Delete</button>}</div>)}</div>{!records.some(d=>d.kind===section)&&<p>No {titles[section]?.toLowerCase()} content yet. Create your first draft to get started.</p>}</section>}
+ </main></div></div>
 }

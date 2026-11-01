@@ -1,7 +1,7 @@
 'use client'
 import Image from 'next/image'
 import { Tag } from 'lucide-react'
-import type { Project } from '@/lib/supabase'
+import type { Project } from '@/lib/portfolio-client'
 
 export default function ProjectCard({ project }: { project: Project }) {
   return (

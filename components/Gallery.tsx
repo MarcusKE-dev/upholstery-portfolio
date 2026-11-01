@@ -1,7 +1,7 @@
 // components/Gallery.tsx
 'use client'
 import { useState, useEffect } from 'react'
-import { getProjects, type Project } from '@/lib/supabase'
+import { getPublicProjects, type Project } from '@/lib/portfolio-client'
 import ProjectCard, { ProjectCardSkeleton } from './ProjectCard'
 import Link from 'next/link'
 import { CATEGORIES, SUBCATEGORIES, type CategoryId } from '@/lib/constants'
@@ -17,7 +17,7 @@ export default function Gallery() {
   const [subFilter, setSubFilter] = useState('all')
 
   useEffect(() => {
-    getProjects()
+    getPublicProjects()
       .then(setProjects)
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))

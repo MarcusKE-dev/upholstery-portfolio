@@ -28,7 +28,7 @@ const inp: React.CSSProperties = {
 
 const lbl: React.CSSProperties = {
   display: 'block',
-  fontSize: '0.6rem',
+  fontSize: '0.75rem',
   letterSpacing: '0.3em',
   textTransform: 'uppercase',
   color: '#8B6F5E',
@@ -77,7 +77,7 @@ export default function InquiryForm() {
 
   if (status === 'success') {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center"
+      <div role="status" className="flex flex-col items-center justify-center py-20 text-center"
         style={{ border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.03)' }}>
         <CheckCircle size={32} color="#C9A84C" strokeWidth={1} className="mb-5" />
         <h3 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: '1.75rem', color: '#2C1810', fontWeight: 300 }}>
@@ -85,10 +85,10 @@ export default function InquiryForm() {
         </h3>
         <p className="mt-3 text-sm font-light max-w-xs"
           style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif", lineHeight: 1.8 }}>
-          Thank you for reaching out. Charles will review your project and be in touch within 24 hours.
+          Thank you for reaching out. Your enquiry has been sent for review.
         </p>
         <button onClick={() => setStatus('idle')} className="mt-8 text-xs tracking-widest uppercase"
-          style={{ color: '#C9A84C', fontFamily: "'Jost',sans-serif", textDecoration: 'underline', textUnderlineOffset: '4px' }}>
+          style={{ color: '#806320', fontFamily: "'Jost',sans-serif", textDecoration: 'underline', textUnderlineOffset: '4px' }}>
           Send another inquiry
         </button>
       </div>
@@ -110,40 +110,40 @@ export default function InquiryForm() {
         </p>
       </div>
 
-      <div className="p-8">
+      <form className="p-8" onSubmit={e => { e.preventDefault(); void handleSubmit() }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label style={lbl}>Full Name <span style={{ color: '#C9A84C' }}>*</span></label>
-            <input type="text" value={form.name} onChange={set('name')}
+            <label htmlFor="inquiry-name" style={lbl}>Full Name <span style={{ color: '#806320' }}>*</span></label>
+            <input type="text" id="inquiry-name" name="name" maxLength={100} required value={form.name} onChange={set('name')}
               placeholder="Your full name" style={inp}
               onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
               onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
           </div>
           <div>
-            <label style={lbl}>Email Address <span style={{ color: '#C9A84C' }}>*</span></label>
-            <input type="email" value={form.email} onChange={set('email')}
+            <label htmlFor="inquiry-email" style={lbl}>Email Address <span style={{ color: '#806320' }}>*</span></label>
+            <input type="email" id="inquiry-email" name="email" maxLength={254} required value={form.email} onChange={set('email')}
               placeholder="your@email.com" style={inp}
               onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
               onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
           </div>
           <div>
-            <label style={lbl}>Phone Number</label>
-            <input type="tel" value={form.phone} onChange={set('phone')}
+            <label htmlFor="inquiry-phone" style={lbl}>Phone Number</label>
+            <input type="tel" id="inquiry-phone" name="phone" maxLength={40} value={form.phone} onChange={set('phone')}
               placeholder="+254 7XX XXX XXX" style={inp}
               onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
               onBlur={e  => (e.target.style.borderBottomColor = 'rgba(201,168,76,0.4)')} />
           </div>
           <div>
-            <label style={lbl}>Service Category</label>
-            <select value={form.category} onChange={set('category')} style={inp}>
+            <label htmlFor="inquiry-category" style={lbl}>Service Category</label>
+            <select id="inquiry-category" name="category" value={form.category} onChange={set('category')} style={inp}>
               {SERVICES.map(s => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </div>
           <div className="md:col-span-2">
-            <label style={lbl}>Project Description <span style={{ color: '#C9A84C' }}>*</span></label>
-            <textarea value={form.description} onChange={set('description')} rows={5}
+            <label htmlFor="inquiry-description" style={lbl}>Project Description <span style={{ color: '#806320' }}>*</span></label>
+            <textarea id="inquiry-description" name="description" maxLength={5000} required value={form.description} onChange={set('description')} rows={5}
               placeholder="Describe your piece — its current condition, the look you have in mind, fabrics or finishes you are drawn to…"
               style={{ ...inp, resize: 'none', lineHeight: 1.8 }}
               onFocus={e => (e.target.style.borderBottomColor = '#C9A84C')}
@@ -152,7 +152,7 @@ export default function InquiryForm() {
         </div>
 
         {status === 'error' && (
-          <div className="mt-5 flex items-center gap-2 text-sm"
+          <div role="alert" className="mt-5 flex items-center gap-2 text-sm"
             style={{ color: '#8B3A3A', fontFamily: "'Jost',sans-serif" }}>
             <AlertCircle size={14} strokeWidth={1.5} />
             {errMsg}
@@ -162,11 +162,11 @@ export default function InquiryForm() {
         <div className="my-8" style={{ height: '1px', background: 'linear-gradient(90deg,transparent,rgba(201,168,76,0.3),transparent)' }} />
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <p className="text-xs font-light" style={{ color: '#B8A090', fontFamily: "'Jost',sans-serif" }}>
-            Fields marked <span style={{ color: '#C9A84C' }}>*</span> are required.
-            Your details are never shared.
+          <p className="text-xs font-light" style={{ color: '#665044', fontFamily: "'Jost',sans-serif" }}>
+            Fields marked <span style={{ color: '#806320' }}>*</span> are required.
+            Please avoid including sensitive personal information.
           </p>
-          <button onClick={handleSubmit} disabled={status === 'loading'}
+          <button type="submit" disabled={status === 'loading'}
             className="inline-flex items-center gap-3 px-8 py-4 text-xs tracking-widest uppercase transition-all duration-200 disabled:opacity-60 hover:bg-[#4A2E1E] flex-shrink-0"
             style={{ background: '#2C1810', color: '#FAF5E9', fontFamily: "'Jost',sans-serif" }}>
             {status === 'loading'
@@ -175,7 +175,7 @@ export default function InquiryForm() {
             }
           </button>
         </div>
-      </div>
+      </form>
     </div>
   )
 }

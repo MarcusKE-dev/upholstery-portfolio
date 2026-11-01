@@ -4,25 +4,42 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "build": "next build --webpack && tsc -p tsconfig.cloudflare.json && node scripts/build-pages.mjs",
+    "start": "npm run dev:pages",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.cloudflare.json",
+    "dev:pages": "wrangler pages dev out --ip 127.0.0.1 --port 8788 --local-protocol https",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "test:browser": "playwright test",
+    "verify:build": "node scripts/check-build.mjs",
+    "setup:local": "node scripts/local-setup.mjs",
+    "verify": "npm run build && npm run verify:build",
+    "test:fresh": "node scripts/test-fresh.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.107.0",
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.0.3",
     "browser-image-compression": "^2.0.2",
-    "lucide-react": "^0.383.0",
-    "next": "14.2.3",
-    "react": "^18",
-    "react-dom": "^18",
-    "resend": "^6.12.4"
+    "file-type": "22.2.0",
+    "image-size": "2.0.4",
+    "lucide-react": "1.62.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261027.1",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "5.9.3",
+    "wrangler": "^4.153.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

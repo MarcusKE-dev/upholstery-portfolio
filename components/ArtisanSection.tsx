@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { Award, Scissors, Star } from 'lucide-react'
-import { getArtisanImage } from '@/lib/supabase'
+import { getArtisanImage } from '@/lib/portfolio-client'
 import Image from 'next/image'
 
 export default function ArtisanSection() {
@@ -11,7 +11,6 @@ export default function ArtisanSection() {
   useEffect(() => {
     getArtisanImage()
       .then(url => {
-        console.log('[ArtisanSection] loaded artisan image URL:', url)
         setArtisanImage(url)
       })
       .catch(console.error)
@@ -40,10 +39,10 @@ export default function ArtisanSection() {
                 {artisanImage ? (
                   <Image
                     src={artisanImage}
-                    alt="Charles – Master Upholsterer"
+                    alt="Charles, upholstery and furnishing practice"
                     fill
                     className="object-cover"
-                    sizes="(max-width: 1024px) 50vw, 40vw"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full">
@@ -52,7 +51,7 @@ export default function ArtisanSection() {
                       <path d="M30 300 Q30 160 100 155 Q170 160 170 300 Z" />
                     </svg>
                     <p className="text-xs tracking-widest uppercase" style={{ color: '#8B6F5E', fontFamily: "'Jost',sans-serif" }}>
-                      Upload artisan photo in admin
+                      Upholstery & furnishings
                     </p>
                   </div>
                 )}
@@ -64,8 +63,8 @@ export default function ArtisanSection() {
           <div className="order-1 lg:order-2">
   {/* Professional Heading */}
   <h2 className="reveal font-serif text-4xl font-light leading-tight text-[#2C1810] lg:text-5xl mb-6">
-    A Definition of{' '}
-    <em className="italic text-[#C9A84C]">Design Experience</em>
+    Furniture with{' '}
+    <em className="italic text-[#806320]">a considered finish</em>
   </h2>
 
   {/* Accent Divider Line */}
@@ -73,26 +72,16 @@ export default function ArtisanSection() {
 
   {/* Unified, Premium Copy Body */}
   <div className="reveal font-sans text-base font-light leading-relaxed text-[#4A2E1E] space-y-5 mb-10">
-    <p>
-      Driven by a passion for curated spaces and meticulous craftsmanship, we have spent the past 
-      five years redefining bespoke upholstery and interior design in Nairobi. Every piece we touch 
-      is treated as a singular commission, a harmonious blend of structural design and textile artistry. 
-      We believe your surroundings carry meaning, and our work is to shape, restore, and elevate that experience.
-    </p>
-    <p>
-      Specializing in full-scale interior transformations and custom upholstery across Nairobi and Karen, 
-      we seamlessly bridge the gap between spatial design and handcrafted furniture. To achieve this, 
-      we source only the finest elements: high-density orthopedic foam, Italian top-grain leather, 
-      Turkish velvet, and precision structural webbing.
-    </p>
+    <p>Charles&apos; Interiors brings together furniture upholstery, restoration and interior furnishing in Nairobi. Start with a favourite sofa, a headboard or the textiles that connect a room.</p>
+    <p>Discuss the condition of the piece, the feel you want and how it will be used. Fabric, padding and the underlying support all contribute to the result, so the right scope begins with understanding the furniture.</p>
   </div>
 
   {/* Grid Container Starts Here */}
   <div className="reveal grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                [Award, 'Master Upholsterer', 'City & Guilds Certified'],
-                [Scissors, 'Structural Specialist', 'Frame & Webbing Repair'],
-                [Star, 'Premium Materials', 'Italian & Turkish Fabrics'],
+                [Award, 'Upholstery', 'Seating & loose covers'],
+                [Scissors, 'Restoration', 'Discuss repair options'],
+                [Star, 'Furnishings', 'Beds & window textiles'],
               ].map(([Icon, title, sub]: any) => (
                 <div key={title} className="p-5 border flex flex-col gap-2"
                   style={{ borderColor: 'rgba(201,168,76,0.2)', background: 'rgba(201,168,76,0.03)' }}>

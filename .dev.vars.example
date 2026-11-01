@@ -1,0 +1,8 @@
+# LOCAL ONLY. Copy to .dev.vars. Do not reuse a production token.
+SITE_URL=https://localhost:8788
+INDEXABLE=false
+ADMIN_ENROLLMENT_TOKEN=REPLACE_WITH_A_PRIVATE_RANDOM_64_CHARACTER_HEX_TOKEN
+# Optional local delivery testing: authorized sender/recipient only.
+RESEND_API_KEY=
+CHARLES_EMAIL=
+RESEND_FROM_EMAIL=
